@@ -15,13 +15,13 @@ type Order struct {
 }
 
 type Paginator interface {
-	Page() int
+	Page() uint
 }
 
-type Int int
+type Uint uint
 
-func (i Int) Page() int {
-	return int(i)
+func (i Uint) Page() uint {
+	return uint(i)
 }
 
 type Dsl struct {
@@ -61,7 +61,26 @@ func (query Query) BoolBuild() string {
 func (c *Condition) compile() {
 
 	c.Dsl = &Dsl{
-		Query: make(map[string]QueryBuilder),
+		Source: make([]string, 0),
+		Sort:   make([]Sort, 0),
+		Query:  make(map[string]QueryBuilder),
+	}
+
+	if c.fields != nil || len(c.fields) > 0 {
+		c.Dsl.Source = c.fields
+	}
+	if c.sort != nil || len(c.sort) > 0 {
+		c.Dsl.Sort = c.sort
+	}
+
+	if c.size >= 0 {
+		c.Dsl.Size = Uint(c.size)
+	} else {
+		c.Dsl.Size = Uint(10)
+	}
+
+	if c.page > 0 {
+		c.Dsl.From = Uint((c.page - 1) * c.size)
 	}
 
 	boolQuery := c.component()

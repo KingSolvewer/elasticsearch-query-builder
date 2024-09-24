@@ -54,6 +54,10 @@ var FieldTypeSet = map[FieldType]string{
 type NestedFunc func(c *Condition) *Condition
 
 type Condition struct {
+	fields             []string
+	size               uint
+	page               uint
+	sort               []Sort
 	where              map[BoolClauseType][]BoolBuilder
 	nested             map[BoolClauseType][]NestedFunc
 	minimumShouldMatch int
@@ -72,6 +76,38 @@ func NewCondition() *Condition {
 func GetCondition() *Condition {
 	condition.compile()
 	return condition
+}
+
+func Select(fields ...string) *Condition {
+	return condition.Select(fields...)
+}
+
+func (c *Condition) Select(fields ...string) *Condition {
+	c.fields = fields
+	return c
+}
+
+func Size(value uint) *Condition {
+	return condition.Size(value)
+}
+
+func (c *Condition) Size(value uint) *Condition {
+	c.size = value
+
+	return c
+}
+
+func Page(value uint) *Condition {
+	return condition.Page(value)
+}
+
+func (c *Condition) Page(value uint) *Condition {
+	if value < 1 {
+		value = 1
+	}
+
+	c.page = value
+	return c
 }
 
 // Where Must term 查询语句

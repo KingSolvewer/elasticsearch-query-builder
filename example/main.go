@@ -25,6 +25,7 @@ func main() {
 	//elastic.Where("title", "1231312").Where("posttime", "12212")
 	//elastic.Where("title", "1231312").Where("posttime", "12212").WhereIn("status", []string{"a", "b", "c"})
 	//elastic.WhereNot("title", "safjsdf").WhereNot("posttime", "sfasdfasf").WhereGt("stat_", 1)
+	elastic.Select("sdjf", "fsajlfas").Size(10).Page(2)
 	elastic.OrWhere("title", "saffdasdf").OrWhere("title", "fsdafasfd")
 
 	elastic.WhereNested(func(c *elastic.Condition) *elastic.Condition {
