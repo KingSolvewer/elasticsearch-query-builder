@@ -8,10 +8,10 @@ type BoolBuilder interface {
 	BoolBuild() string
 }
 
-type Sort map[string]Order
+type Sort map[string]OrderBy
 
-type Order struct {
-	Order string
+type OrderBy struct {
+	Order OrderType `json:"order"`
 }
 
 type Paginator interface {

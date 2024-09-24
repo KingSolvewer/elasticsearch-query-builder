@@ -43,7 +43,7 @@ func main() {
 	elastic.Filter("comment", "dsaffd").FilterBetween("comment_time", 1, 2)
 	elastic.FilterNested(func(c *elastic.Condition) *elastic.Condition {
 		return c.OrWhere("zan", "safdsa").OrWhere("zan2", "fsafdsa")
-	})
+	}).Order("create_time", elastic.Desc).Order("posttime", elastic.Asc)
 
 	//[]string{"create_time", "posttime"}
 	//elastic.OrWhereNested(func(c *elastic.Condition) *elastic.Condition {

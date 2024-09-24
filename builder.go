@@ -51,6 +51,13 @@ var FieldTypeSet = map[FieldType]string{
 	BoolPrefix:   "bool_prefix",
 }
 
+type OrderType string
+
+const (
+	Asc  OrderType = "asc"
+	Desc OrderType = "desc"
+)
+
 type NestedFunc func(c *Condition) *Condition
 
 type Condition struct {
@@ -68,6 +75,7 @@ var condition = NewCondition()
 
 func NewCondition() *Condition {
 	return &Condition{
+		sort:   make([]Sort, 0),
 		where:  make(map[BoolClauseType][]BoolBuilder),
 		nested: make(map[BoolClauseType][]NestedFunc),
 	}
@@ -107,6 +115,26 @@ func (c *Condition) Page(value uint) *Condition {
 	}
 
 	c.page = value
+	return c
+}
+
+func Order(field string, order OrderType) *Condition {
+	return condition.Order(field, order)
+}
+
+func (c *Condition) Order(field string, orderType OrderType) *Condition {
+
+	sort := make(map[string]OrderBy)
+
+	switch orderType {
+	case Asc, Desc:
+		sort[field] = OrderBy{Order: orderType}
+	default:
+		sort[field] = OrderBy{Order: Asc}
+	}
+
+	c.sort = append(c.sort, sort)
+
 	return c
 }
 
