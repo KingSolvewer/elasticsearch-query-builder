@@ -35,10 +35,11 @@ type Dsl struct {
 type Query map[string]QueryBuilder
 
 type BoolQuery struct {
-	Must    []BoolBuilder `json:"must,omitempty"`
-	MustNot []BoolBuilder `json:"must_not,omitempty"`
-	Should  []BoolBuilder `json:"should,omitempty"`
-	Filter  []BoolBuilder `json:"filter,omitempty"`
+	Must               []BoolBuilder `json:"must,omitempty"`
+	MustNot            []BoolBuilder `json:"must_not,omitempty"`
+	Should             []BoolBuilder `json:"should,omitempty"`
+	Filter             []BoolBuilder `json:"filter,omitempty"`
+	MinimumShouldMatch int           `json:"minimum_should_match,omitempty"`
 }
 
 func (b BoolQuery) QueryBuild() string {
@@ -57,20 +58,19 @@ func (query Query) BoolBuild() string {
 	return ""
 }
 
-var (
-//	dsl = &Dsl{
-//		Sort:  make([]Sort, 0),
-//		Query: make(map[string]QueryBuilder),
-//	}
-)
-
 func (c *Condition) compile() {
 
 	c.Dsl = &Dsl{
 		Query: make(map[string]QueryBuilder),
 	}
 
-	c.Dsl.Query["bool"] = c.component()
+	boolQuery := c.component()
+
+	if len(boolQuery.Should) > 0 {
+		boolQuery.MinimumShouldMatch = c.minimumShouldMatch
+	}
+
+	c.Dsl.Query["bool"] = boolQuery
 }
 
 func (c *Condition) component() BoolQuery {
@@ -84,27 +84,30 @@ func (c *Condition) component() BoolQuery {
 			boolQuery.MustNot = append(boolQuery.MustNot, items...)
 		case Should:
 			boolQuery.Should = append(boolQuery.Should, items...)
-		case Filter:
+		case FilterClause:
 			boolQuery.Filter = append(boolQuery.Filter, items...)
 		}
 	}
 
 	for key, fns := range c.nested {
-		switch key {
-		case Must:
-			for _, fn := range fns {
-				newCondition := NewCondition()
-				newCondition = fn(newCondition)
-				newBoolQuery := newCondition.component()
+		for _, fn := range fns {
+			newCondition := NewCondition()
+			newCondition = fn(newCondition)
+			newBoolQuery := newCondition.component()
 
-				newQuery := make(Query)
-				newQuery["bool"] = newBoolQuery
+			newQuery := make(Query)
+			newQuery["bool"] = newBoolQuery
+
+			switch key {
+			case Must:
 				boolQuery.Must = append(boolQuery.Must, newQuery)
+			case MustNot:
+				boolQuery.MustNot = append(boolQuery.MustNot, newQuery)
+			case Should:
+				boolQuery.Should = append(boolQuery.Should, newQuery)
+			case FilterClause:
+				boolQuery.Filter = append(boolQuery.Filter, newQuery)
 			}
-		case MustNot:
-		case Should:
-		case Filter:
-
 		}
 	}
 

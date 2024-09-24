@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
+	"github.com/KingSolvewer/elasticsearch-query-builder/fulltext"
 	"log"
 )
 
@@ -32,8 +33,18 @@ func main() {
 		return c.WhereNested(func(c *elastic.Condition) *elastic.Condition {
 			return c.OrWhere("posttime", "123123123").OrWhere("posttime", "34432341")
 		})
+	}).WhereBetween("fsdafd", 1, 2).WhereMatch("title", "sfdasf", elastic.MatchPhrase, fulltext.AppendParams{})
+	elastic.WhereMultiMatch([]string{"create_time", "posttime"}, "fasdfasdf", elastic.BestFields, fulltext.AppendParams{})
+	elastic.OrWhereNested(func(c *elastic.Condition) *elastic.Condition {
+		return c.Where("posttime", "fdajlsdf").Where("create_time", "sdfsadjf")
+	}).OrWhere("author", "fdsafjl").MinimumShouldMatch(1)
+
+	elastic.Filter("comment", "dsaffd").FilterBetween("comment_time", 1, 2)
+	elastic.FilterNested(func(c *elastic.Condition) *elastic.Condition {
+		return c.OrWhere("zan", "safdsa").OrWhere("zan2", "fsafdsa")
 	})
 
+	//[]string{"create_time", "posttime"}
 	//elastic.OrWhereNested(func(c *elastic.Condition) *elastic.Condition {
 	//
 	//})
