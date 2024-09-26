@@ -58,44 +58,44 @@ func (query Query) BoolBuild() string {
 	return ""
 }
 
-func (c *Condition) compile() {
+func (b *Builder) compile() {
 
-	c.Dsl = &Dsl{
+	b.Dsl = &Dsl{
 		Source: make([]string, 0),
 		Sort:   make([]Sort, 0),
 		Query:  make(map[string]QueryBuilder),
 	}
 
-	if c.fields != nil || len(c.fields) > 0 {
-		c.Dsl.Source = c.fields
+	if b.fields != nil || len(b.fields) > 0 {
+		b.Dsl.Source = b.fields
 	}
-	if c.sort != nil || len(c.sort) > 0 {
-		c.Dsl.Sort = c.sort
+	if b.sort != nil || len(b.sort) > 0 {
+		b.Dsl.Sort = b.sort
 	}
 
-	if c.size >= 0 {
-		c.Dsl.Size = Uint(c.size)
+	if b.size >= 0 {
+		b.Dsl.Size = Uint(b.size)
 	} else {
-		c.Dsl.Size = Uint(10)
+		b.Dsl.Size = Uint(10)
 	}
 
-	if c.page > 0 {
-		c.Dsl.From = Uint((c.page - 1) * c.size)
+	if b.page > 0 {
+		b.Dsl.From = Uint((b.page - 1) * b.size)
 	}
 
-	boolQuery := c.component()
+	boolQuery := b.component()
 
 	if len(boolQuery.Should) > 0 {
-		boolQuery.MinimumShouldMatch = c.minimumShouldMatch
+		boolQuery.MinimumShouldMatch = b.minimumShouldMatch
 	}
 
-	c.Dsl.Query["bool"] = boolQuery
+	b.Dsl.Query["bool"] = boolQuery
 }
 
-func (c *Condition) component() BoolQuery {
+func (b *Builder) component() BoolQuery {
 	boolQuery := BoolQuery{}
 
-	for key, items := range c.where {
+	for key, items := range b.where {
 		switch key {
 		case Must:
 			boolQuery.Must = append(boolQuery.Must, items...)
@@ -108,11 +108,11 @@ func (c *Condition) component() BoolQuery {
 		}
 	}
 
-	for key, fns := range c.nested {
+	for key, fns := range b.nested {
 		for _, fn := range fns {
-			newCondition := NewCondition()
-			newCondition = fn(newCondition)
-			newBoolQuery := newCondition.component()
+			newBuilder := NewBuilder()
+			newBuilder = fn(newBuilder)
+			newBoolQuery := newBuilder.component()
 
 			newQuery := make(Query)
 			newQuery["bool"] = newBoolQuery

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
-	"github.com/KingSolvewer/elasticsearch-query-builder/fulltext"
 	"log"
 )
 
@@ -25,30 +24,39 @@ func main() {
 	//elastic.Where("title", "1231312").Where("posttime", "12212")
 	//elastic.Where("title", "1231312").Where("posttime", "12212").WhereIn("status", []string{"a", "b", "c"})
 	//elastic.WhereNot("title", "safjsdf").WhereNot("posttime", "sfasdfasf").WhereGt("stat_", 1)
-	elastic.Select("sdjf", "fsajlfas").Size(10).Page(2)
-	elastic.OrWhere("title", "saffdasdf").OrWhere("title", "fsdafasfd")
-
-	elastic.WhereNested(func(c *elastic.Condition) *elastic.Condition {
-		return c.OrWhere("create_time", "12312312").OrWhere("create_time", "456354").Where("create_time", "345253")
-	}).WhereNested(func(c *elastic.Condition) *elastic.Condition {
-		return c.WhereNested(func(c *elastic.Condition) *elastic.Condition {
-			return c.OrWhere("posttime", "123123123").OrWhere("posttime", "34432341")
-		})
-	}).WhereBetween("fsdafd", 1, 2).WhereMatch("title", "sfdasf", elastic.MatchPhrase, fulltext.AppendParams{})
-	elastic.WhereMultiMatch([]string{"create_time", "posttime"}, "fasdfasdf", elastic.BestFields, fulltext.AppendParams{})
-	elastic.OrWhereNested(func(c *elastic.Condition) *elastic.Condition {
-		return c.Where("posttime", "fdajlsdf").Where("create_time", "sdfsadjf")
-	}).OrWhere("author", "fdsafjl").MinimumShouldMatch(1)
-
-	elastic.Filter("comment", "dsaffd").FilterBetween("comment_time", 1, 2)
-	elastic.FilterNested(func(c *elastic.Condition) *elastic.Condition {
-		return c.OrWhere("zan", "safdsa").OrWhere("zan2", "fsafdsa")
-	}).Order("create_time", elastic.Desc).Order("posttime", elastic.Asc)
+	//elastic.Where("add_type", true)
+	//elastic.Select("sdjf", "fsajlfas").Size(10).Page(2)
+	//elastic.OrWhere("title", "saffdasdf").OrWhere("title", "fsdafasfd").WhereIn("posttime", []any{"1213", "fasfa", 42134})
+	//elastic.WhereExists("title").WhereRegexp("title", "asfjsda", termlevel.RegexpParam{})
+	//elastic.WhereWildcard("title", "safdsal", termlevel.WildcardParam{})
+	//
+	//elastic.WhereNested(func(c *elastic.Builder) *elastic.Builder {
+	//	return c.OrWhere("create_time", "12312312").OrWhere("create_time", "456354").Where("create_time", "345253")
+	//}).WhereNested(func(c *elastic.Builder) *elastic.Builder {
+	//	return c.WhereNested(func(c *elastic.Builder) *elastic.Builder {
+	//		return c.OrWhere("posttime", "123123123").OrWhere("posttime", "34432341")
+	//	})
+	//}).WhereRange("posttime", "9789978", elastic.Gt).WhereBetween("fsdafd", 1, 2).WhereMatch("title", "sfdasf", elastic.MatchPhrase, fulltext.AppendParams{})
+	//elastic.WhereMultiMatch([]string{"create_time", "posttime"}, "fasdfasdf", elastic.BestFields, fulltext.AppendParams{})
+	//elastic.OrWhereNested(func(c *elastic.Builder) *elastic.Builder {
+	//	return c.Where("posttime", "fdajlsdf").Where("create_time", "sdfsadjf")
+	//}).OrWhere("author", "fdsafjl").MinimumShouldMatch(1)
+	//
+	//elastic.Filter("comment", "dsaffd").FilterBetween("comment_time", 1, 2)
+	//elastic.FilterNested(func(c *elastic.Builder) *elastic.Builder {
+	//	return c.OrWhere("zan", "safdsa").OrWhere("zan2", "fsafdsa")
+	//}).Order("create_time", elastic.Desc).Order("posttime", elastic.Asc)
 
 	//[]string{"create_time", "posttime"}
 	//elastic.OrWhereNested(func(c *elastic.Condition) *elastic.Condition {
 	//
 	//})
+
+	//elastic.Where("title", "中国").WhereNested(func(b *elastic.Builder) *elastic.Builder {
+	//	return b.OrWhere("title", "美国").OrWhere("title", "日本")
+	//})
+
+	elastic.Where("status", 1).Where("title", "中国").OrWhere("status", 1).WhereNot("country", "日本").Filter("city", "合肥")
 
 	condition := elastic.GetCondition()
 	fmt.Println(condition)
