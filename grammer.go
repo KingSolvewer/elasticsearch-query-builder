@@ -1,5 +1,10 @@
 package elastic
 
+import (
+	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
+	"github.com/KingSolvewer/elasticsearch-query-builder/es"
+)
+
 type QueryBuilder interface {
 	QueryBuild() string
 }
@@ -8,10 +13,10 @@ type BoolBuilder interface {
 	BoolBuild() string
 }
 
-type Sort map[string]OrderBy
+type Sort map[string]Order
 
-type OrderBy struct {
-	Order OrderType `json:"order"`
+type Order struct {
+	Order es.OrderType `json:"order"`
 }
 
 type Paginator interface {
@@ -30,6 +35,7 @@ type Dsl struct {
 	From   Paginator `json:"from,omitempty"`
 	Sort   []Sort    `json:"sort,omitempty"`
 	Query  `json:"query,omitempty"`
+	Aggs   map[string]map[string]aggs.Aggregator `json:"aggs,omitempty"`
 }
 
 type Query map[string]QueryBuilder
@@ -90,6 +96,7 @@ func (b *Builder) compile() {
 	}
 
 	b.Dsl.Query["bool"] = boolQuery
+	b.Dsl.Aggs = b.aggs
 }
 
 func (b *Builder) component() BoolQuery {
@@ -97,13 +104,13 @@ func (b *Builder) component() BoolQuery {
 
 	for key, items := range b.where {
 		switch key {
-		case Must:
+		case es.Must:
 			boolQuery.Must = append(boolQuery.Must, items...)
-		case MustNot:
+		case es.MustNot:
 			boolQuery.MustNot = append(boolQuery.MustNot, items...)
-		case Should:
+		case es.Should:
 			boolQuery.Should = append(boolQuery.Should, items...)
-		case FilterClause:
+		case es.FilterClause:
 			boolQuery.Filter = append(boolQuery.Filter, items...)
 		}
 	}
@@ -118,13 +125,13 @@ func (b *Builder) component() BoolQuery {
 			newQuery["bool"] = newBoolQuery
 
 			switch key {
-			case Must:
+			case es.Must:
 				boolQuery.Must = append(boolQuery.Must, newQuery)
-			case MustNot:
+			case es.MustNot:
 				boolQuery.MustNot = append(boolQuery.MustNot, newQuery)
-			case Should:
+			case es.Should:
 				boolQuery.Should = append(boolQuery.Should, newQuery)
-			case FilterClause:
+			case es.FilterClause:
 				boolQuery.Filter = append(boolQuery.Filter, newQuery)
 			}
 		}
