@@ -19,7 +19,7 @@ func (b *Builder) GroupBy(field string, param aggs.TermsParam, hitsFunc aggs.Top
 	}
 
 	if hitsFunc != nil {
-		terms.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc()}
+		terms.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
 	}
 
 	return b.Aggs(field+"_"+es.Terms, terms)
@@ -39,7 +39,7 @@ func (b *Builder) Histogram(field string, param aggs.HistogramParam, hitsFunc ag
 	}
 
 	if hitsFunc != nil {
-		histogram.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc()}
+		histogram.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
 	}
 
 	return b.Aggs(field+"_"+es.Histogram, histogram)
@@ -70,7 +70,7 @@ func (b *Builder) Range(field string, param aggs.RangeParam, hitsFunc aggs.TopHi
 	}
 
 	if hitsFunc != nil {
-		rangeAggs.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc()}
+		rangeAggs.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
 	}
 
 	return b.Aggs(field+"_"+es.Range, rangeAggs)
@@ -178,12 +178,52 @@ func (b *Builder) ExtendedStats(field string, param aggs.MetricParam) *Builder {
 	return b.Aggs(field+"_"+es.ExtendedStats, statsAggs)
 }
 
-func TopHits(hits aggs.TopHits) *Builder {
+func TopHits(hits aggs.TopHitsParam) *Builder {
 	return builder.TopHits(hits)
 }
 
-func (b *Builder) TopHits(hits aggs.TopHits) *Builder {
+func (b *Builder) TopHits(hits aggs.TopHitsParam) *Builder {
+
+	newB := NewBuilder().From(hits.From).Size(hits.Size).Select(hits.Source...)
+	if hits.Sort != nil {
+		for field, sort := range hits.Sort {
+			newB.OrderBy(field, sort)
+		}
+	}
+
+	hitsAggs := newB.topHits()
+
+	return b.Aggs(es.TopHits, hitsAggs)
+}
+
+func (b *Builder) TopHitsFunc(fn func(b *Builder) *Builder) *Builder {
+	hits := fn(NewBuilder()).topHits()
 	return b.Aggs(es.TopHits, hits)
+}
+
+func (b *Builder) topHits() aggs.TopHits {
+	var (
+		size es.Uint
+		from es.Uint
+	)
+	if b.size >= 0 {
+		size = es.Uint(b.size)
+	} else {
+		size = es.Uint(10)
+	}
+
+	if b.from > 0 {
+		from = es.Uint(b.from)
+	}
+
+	topHits := aggs.TopHits{
+		From:   from,
+		Size:   size,
+		Sort:   b.sort,
+		Source: b.fields,
+	}
+
+	return topHits
 }
 
 func checkAggsRangeType(ranges []aggs.Ranges) bool {

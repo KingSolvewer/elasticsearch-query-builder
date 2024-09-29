@@ -11,7 +11,7 @@ type NestedFunc func(b *Builder) *Builder
 type Builder struct {
 	fields             []string
 	size               uint
-	page               uint
+	from               uint
 	sort               []es.Sort
 	where              map[es.BoolClauseType][]es.BoolBuilder
 	nested             map[es.BoolClauseType][]NestedFunc
@@ -44,7 +44,7 @@ func Reset() *Builder {
 func (b *Builder) Reset() *Builder {
 	b.fields = make([]string, 0)
 	b.size = 0
-	b.page = 0
+	b.from = 0
 	b.sort = make([]es.Sort, 0)
 	b.where = make(map[es.BoolClauseType][]es.BoolBuilder)
 	b.nested = make(map[es.BoolClauseType][]NestedFunc)
@@ -85,16 +85,12 @@ func (b *Builder) Size(value uint) *Builder {
 	return b
 }
 
-func Page(value uint) *Builder {
-	return builder.Page(value)
+func From(value uint) *Builder {
+	return builder.From(value)
 }
 
-func (b *Builder) Page(value uint) *Builder {
-	if value < 1 {
-		value = 1
-	}
-
-	b.page = value
+func (b *Builder) From(value uint) *Builder {
+	b.from = value
 	return b
 }
 

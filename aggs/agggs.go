@@ -4,7 +4,7 @@ import (
 	"github.com/KingSolvewer/elasticsearch-query-builder/es"
 )
 
-type TopHitsFunc func() TopHits
+type TopHitsFunc func() TopHitsParam
 
 type TermsAggs struct {
 	Terms `json:"terms"`
@@ -136,22 +136,56 @@ type TopHitsAggs struct {
 }
 
 type TopHits struct {
-	From   int                 `json:"from,omitempty"`
-	Size   int                 `json:"size,omitempty"`
-	Sort   map[string]es.Order `json:"sort,omitempty"`
-	Source []string            `json:"_source,omitempty"`
+	From   es.Paginator `json:"from,omitempty"`
+	Size   es.Paginator `json:"size,omitempty"`
+	Sort   []es.Sort    `json:"sort,omitempty"`
+	Source []string     `json:"_source,omitempty"`
+}
+
+type TopHitsParam struct {
+	From   uint                    `json:"from,omitempty"`
+	Size   uint                    `json:"size,omitempty"`
+	Sort   map[string]es.OrderType `json:"sort,omitempty"`
+	Source []string                `json:"_source,omitempty"`
 }
 
 func (t TopHits) Aggregate(field string) es.Aggregator {
 	return t
 }
 
-type NestedTopHits struct {
-	Aggs map[string]TopHits `json:"name,omitempty"`
-}
-
-func (n NestedTopHits) Aggregate(field string) es.Aggregator {
-	return NestedTopHits{
-		Aggs: make(map[string]TopHits),
+func (p TopHitsParam) TopHits() TopHits {
+	var (
+		size es.Uint
+		from es.Uint
+	)
+	if p.Size >= 0 {
+		size = es.Uint(p.Size)
+	} else {
+		size = es.Uint(10)
 	}
+
+	if p.From > 0 {
+		from = es.Uint(p.From)
+	}
+
+	sorts := make([]es.Sort, 0)
+	if p.Sort != nil {
+		for field, order := range p.Sort {
+			sort := make(es.Sort)
+			sort[field] = es.Order{
+				Order: order,
+			}
+
+			sorts = append(sorts, sort)
+		}
+	}
+
+	topHits := TopHits{
+		From:   from,
+		Size:   size,
+		Sort:   sorts,
+		Source: p.Source,
+	}
+
+	return topHits
 }

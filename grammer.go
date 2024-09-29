@@ -25,8 +25,8 @@ func (b *Builder) compile() {
 		b.Dsl.Size = es.Uint(10)
 	}
 
-	if b.page > 0 {
-		b.Dsl.From = es.Uint((b.page - 1) * b.size)
+	if b.from > 0 {
+		b.Dsl.From = es.Uint(b.from)
 	}
 
 	boolQuery := b.component()

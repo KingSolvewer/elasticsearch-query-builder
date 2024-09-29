@@ -1,12 +1,5 @@
 package termlevel
 
-type Compare interface {
-	String() string
-}
-
-type TermQueryMap map[string]string
-type TermsQueryMap map[string][]string
-
 type TermQuery struct {
 	Term     map[string]any        `json:"term,omitempty"`
 	Range    map[string]RangeQuery `json:"range,omitempty"`
@@ -48,13 +41,5 @@ type WildcardParam struct {
 }
 
 func (term TermQuery) BoolBuild() string {
-	return ""
-}
-
-func (term TermQueryMap) BoolBuild() string {
-	return ""
-}
-
-func (term TermsQueryMap) BoolBuild() string {
 	return ""
 }
