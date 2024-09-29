@@ -8,6 +8,11 @@
 1. 熟悉go语言基础知识，熟悉es查询语句
 2. 简单校验，不符合规范的参数，会进行过滤和跳过组合。使用时，请严格按照es语法输入参数
 
+## 使用
+```go
+go get github.com/KingSolvewer/elasticsearch-query-builder
+```
+
 #### Where, OrWhere, WhereNot, Filter 都是并列关系。构建后，在bool查询条件下同级。
 ```go
 import (
