@@ -73,6 +73,31 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	fmt.Println(string(dsl))
+
+	builder := elastic.NewBuilder().Where("status", 1000).Where("title", "中国").OrWhere("status", 13).WhereNot("country", "日本").Filter("city", "合肥")
+	//elastic.OrderBy("status", es.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]es.OrderType{"_count": es.Asc}}, func() aggs.TopHitsParam {
+	//	return aggs.TopHitsParam{From: 0, Size: 100}
+	//}).GroupBy("modify_date", aggs.TermsParam{}, func() aggs.TopHitsParam {
+	//	return aggs.TopHitsParam{Size: 43}
+	//}).Sum("count", aggs.MetricParam{}).Stats("state", aggs.MetricParam{}).TopHitsFunc(func(b *elastic.Builder) *elastic.Builder {
+	//	return b.Size(100).Select("state,title").OrderBy("news_posttime", es.Desc)
+	//})
+
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+
+	fmt.Println(builder)
+
+	dsl1, err := builder.Dsl()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(string(dsl1))
+
 }

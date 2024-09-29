@@ -38,9 +38,9 @@ func Dsl() ([]byte, error) {
 }
 
 func (b *Builder) Dsl() ([]byte, error) {
-	builder.compile()
+	b.compile()
 
-	dslBytes, err := json.Marshal(builder.query)
+	dslBytes, err := json.Marshal(b.query)
 	return dslBytes, err
 }
 
