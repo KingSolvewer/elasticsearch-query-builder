@@ -183,15 +183,7 @@ func TopHits(hits aggs.TopHitsParam) *Builder {
 }
 
 func (b *Builder) TopHits(hits aggs.TopHitsParam) *Builder {
-
-	newB := NewBuilder().From(hits.From).Size(hits.Size).Select(hits.Source...)
-	if hits.Sort != nil {
-		for field, sort := range hits.Sort {
-			newB.OrderBy(field, sort)
-		}
-	}
-
-	hitsAggs := newB.topHits()
+	hitsAggs := hits.TopHits()
 
 	return b.Aggs(es.TopHits, hitsAggs)
 }
