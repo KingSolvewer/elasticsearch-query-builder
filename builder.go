@@ -33,15 +33,24 @@ func NewBuilder() *Builder {
 	}
 }
 
-func Dsl() ([]byte, error) {
+func Dsl() string {
 	return builder.Dsl()
 }
 
-func (b *Builder) Dsl() ([]byte, error) {
+func (b *Builder) Dsl() string {
+	bytes, _ := b.Marshal()
+
+	return string(bytes)
+}
+
+func Marshal() ([]byte, error) {
+	return builder.Marshal()
+}
+
+func (b *Builder) Marshal() ([]byte, error) {
 	b.compile()
 
-	dslBytes, err := json.Marshal(b.query)
-	return dslBytes, err
+	return json.Marshal(b.query)
 }
 
 func Reset() *Builder {
@@ -66,10 +75,20 @@ func Clone() *Builder {
 }
 
 func (b *Builder) Clone() *Builder {
+	where := make(map[es.BoolClauseType][]es.BoolBuilder)
+	for key, boolBuilderSet := range b.where {
+		where[key] = append(where[key], boolBuilderSet...)
+	}
+
+	nested := make(map[es.BoolClauseType][]NestedFunc)
+	for key, nestedFuncSet := range b.nested {
+		nested[key] = append(nested[key], nestedFuncSet...)
+	}
+
 	return &Builder{
 		fields:             b.fields,
-		where:              b.where,
-		nested:             b.nested,
+		where:              where,
+		nested:             nested,
 		minimumShouldMatch: b.minimumShouldMatch,
 	}
 }
@@ -79,11 +98,7 @@ func Select(fields ...string) *Builder {
 }
 
 func (b *Builder) Select(fields ...string) *Builder {
-	if len(fields) > 0 {
-		b.fields = append(b.fields, fields...)
-	} else {
-		b.fields = fields
-	}
+	b.fields = fields
 	return b
 }
 
@@ -92,7 +107,12 @@ func AppendField(fields ...string) *Builder {
 }
 
 func (b *Builder) AppendField(fields ...string) *Builder {
-	return b.Select(fields...)
+	if len(fields) > 0 {
+		b.fields = append(b.fields, fields...)
+	} else {
+		b.fields = fields
+	}
+	return b
 }
 
 func Size(value uint) *Builder {

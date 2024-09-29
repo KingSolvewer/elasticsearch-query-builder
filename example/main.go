@@ -69,13 +69,11 @@ func main() {
 	//elastic.Range("create_time", aggs.RangeParam{Format: "yyyy-MM-dd", Ranges: []aggs.Ranges{{To: 50}, {From: 50, To: 100}, {From: 100}}})
 	//elastic.TopHits(aggs.TopHits{From: 0, Size: 10, Sort: map[string]es.Order{"posttime": {Order: es.Asc}}})
 
-	dsl, err := elastic.Dsl()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(string(dsl))
+	dsl := elastic.Dsl()
 
-	builder := elastic.NewBuilder().Where("status", 1000).Where("title", "中国").OrWhere("status", 13).WhereNot("country", "日本").Filter("city", "合肥")
+	fmt.Println(dsl)
+
+	builder := elastic.NewBuilder().Select("status").Where("status", 1000).Where("title", "中国").OrWhere("status", 13).WhereNot("country", "日本").Filter("city", "合肥")
 	//elastic.OrderBy("status", es.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]es.OrderType{"_count": es.Asc}}, func() aggs.TopHitsParam {
 	//	return aggs.TopHitsParam{From: 0, Size: 100}
 	//}).GroupBy("modify_date", aggs.TermsParam{}, func() aggs.TopHitsParam {
@@ -92,12 +90,12 @@ func main() {
 	fmt.Println()
 	fmt.Println()
 
-	fmt.Println(builder)
+	dsl1 := builder.Dsl()
 
-	dsl1, err := builder.Dsl()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(string(dsl1))
+	fmt.Println(dsl1)
 
+	builder1 := builder.Clone()
+	builder1.AppendField("content").Where("fsafas", "fsafas").Where("opop", 12132)
+	fmt.Println(builder1.Dsl())
+	fmt.Println(builder.Dsl())
 }
