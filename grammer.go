@@ -1,75 +1,15 @@
 package elastic
 
 import (
-	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
 	"github.com/KingSolvewer/elasticsearch-query-builder/es"
 )
 
-type QueryBuilder interface {
-	QueryBuild() string
-}
-
-type BoolBuilder interface {
-	BoolBuild() string
-}
-
-type Sort map[string]Order
-
-type Order struct {
-	Order es.OrderType `json:"order"`
-}
-
-type Paginator interface {
-	Page() uint
-}
-
-type Uint uint
-
-func (i Uint) Page() uint {
-	return uint(i)
-}
-
-type Dsl struct {
-	Source []string  `json:"_source,omitempty"`
-	Size   Paginator `json:"size,omitempty"`
-	From   Paginator `json:"from,omitempty"`
-	Sort   []Sort    `json:"sort,omitempty"`
-	Query  `json:"query,omitempty"`
-	Aggs   map[string]map[string]aggs.Aggregator `json:"aggs,omitempty"`
-}
-
-type Query map[string]QueryBuilder
-
-type BoolQuery struct {
-	Must               []BoolBuilder `json:"must,omitempty"`
-	MustNot            []BoolBuilder `json:"must_not,omitempty"`
-	Should             []BoolBuilder `json:"should,omitempty"`
-	Filter             []BoolBuilder `json:"filter,omitempty"`
-	MinimumShouldMatch int           `json:"minimum_should_match,omitempty"`
-}
-
-func (b BoolQuery) QueryBuild() string {
-	return ""
-}
-
-func (query Query) QueryBuild() string {
-	return ""
-}
-
-func (b BoolQuery) BoolBuild() string {
-	return ""
-}
-
-func (query Query) BoolBuild() string {
-	return ""
-}
-
 func (b *Builder) compile() {
 
-	b.Dsl = &Dsl{
+	b.Dsl = &es.Dsl{
 		Source: make([]string, 0),
-		Sort:   make([]Sort, 0),
-		Query:  make(map[string]QueryBuilder),
+		Sort:   make([]es.Sort, 0),
+		Query:  make(map[string]es.QueryBuilder),
 	}
 
 	if b.fields != nil || len(b.fields) > 0 {
@@ -80,13 +20,13 @@ func (b *Builder) compile() {
 	}
 
 	if b.size >= 0 {
-		b.Dsl.Size = Uint(b.size)
+		b.Dsl.Size = es.Uint(b.size)
 	} else {
-		b.Dsl.Size = Uint(10)
+		b.Dsl.Size = es.Uint(10)
 	}
 
 	if b.page > 0 {
-		b.Dsl.From = Uint((b.page - 1) * b.size)
+		b.Dsl.From = es.Uint((b.page - 1) * b.size)
 	}
 
 	boolQuery := b.component()
@@ -99,8 +39,8 @@ func (b *Builder) compile() {
 	b.Dsl.Aggs = b.aggs
 }
 
-func (b *Builder) component() BoolQuery {
-	boolQuery := BoolQuery{}
+func (b *Builder) component() es.BoolQuery {
+	boolQuery := es.BoolQuery{}
 
 	for key, items := range b.where {
 		switch key {
@@ -121,7 +61,7 @@ func (b *Builder) component() BoolQuery {
 			newBuilder = fn(newBuilder)
 			newBoolQuery := newBuilder.component()
 
-			newQuery := make(Query)
+			newQuery := make(es.Query)
 			newQuery["bool"] = newBoolQuery
 
 			switch key {

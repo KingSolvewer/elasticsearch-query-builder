@@ -65,4 +65,68 @@ const (
 	Count         = "count"
 	Stats         = "stats"
 	ExtendedStats = "extended_stats"
+	TopHits       = "top_hits"
 )
+
+type QueryBuilder interface {
+	QueryBuild() string
+}
+
+type BoolBuilder interface {
+	BoolBuild() string
+}
+
+type Sort map[string]Order
+
+type Order struct {
+	Order OrderType `json:"order"`
+}
+
+type Paginator interface {
+	Page() uint
+}
+
+type Uint uint
+
+func (i Uint) Page() uint {
+	return uint(i)
+}
+
+type Dsl struct {
+	Source []string  `json:"_source,omitempty"`
+	Size   Paginator `json:"size,omitempty"`
+	From   Paginator `json:"from,omitempty"`
+	Sort   []Sort    `json:"sort,omitempty"`
+	Query  `json:"query,omitempty"`
+	Aggs   map[string]Aggregator `json:"aggs,omitempty"`
+}
+
+type Query map[string]QueryBuilder
+
+type BoolQuery struct {
+	Must               []BoolBuilder `json:"must,omitempty"`
+	MustNot            []BoolBuilder `json:"must_not,omitempty"`
+	Should             []BoolBuilder `json:"should,omitempty"`
+	Filter             []BoolBuilder `json:"filter,omitempty"`
+	MinimumShouldMatch int           `json:"minimum_should_match,omitempty"`
+}
+
+func (b BoolQuery) QueryBuild() string {
+	return ""
+}
+
+func (query Query) QueryBuild() string {
+	return ""
+}
+
+func (b BoolQuery) BoolBuild() string {
+	return ""
+}
+
+func (query Query) BoolBuild() string {
+	return ""
+}
+
+type Aggregator interface {
+	Aggregate(args string) Aggregator
+}

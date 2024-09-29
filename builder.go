@@ -1,7 +1,6 @@
 package elastic
 
 import (
-	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
 	"github.com/KingSolvewer/elasticsearch-query-builder/es"
 	"github.com/KingSolvewer/elasticsearch-query-builder/fulltext"
 	"github.com/KingSolvewer/elasticsearch-query-builder/termlevel"
@@ -13,12 +12,12 @@ type Builder struct {
 	fields             []string
 	size               uint
 	page               uint
-	sort               []Sort
-	where              map[es.BoolClauseType][]BoolBuilder
+	sort               []es.Sort
+	where              map[es.BoolClauseType][]es.BoolBuilder
 	nested             map[es.BoolClauseType][]NestedFunc
 	minimumShouldMatch int
-	aggs               map[string]map[string]aggs.Aggregator
-	*Dsl
+	aggs               map[string]es.Aggregator
+	*es.Dsl
 }
 
 var builder = NewBuilder()
@@ -26,10 +25,10 @@ var builder = NewBuilder()
 func NewBuilder() *Builder {
 	return &Builder{
 		fields: make([]string, 0),
-		sort:   make([]Sort, 0),
-		where:  make(map[es.BoolClauseType][]BoolBuilder),
+		sort:   make([]es.Sort, 0),
+		where:  make(map[es.BoolClauseType][]es.BoolBuilder),
 		nested: make(map[es.BoolClauseType][]NestedFunc),
-		aggs:   make(map[string]map[string]aggs.Aggregator),
+		aggs:   make(map[string]es.Aggregator),
 	}
 }
 
@@ -46,8 +45,8 @@ func (b *Builder) Reset() *Builder {
 	b.fields = make([]string, 0)
 	b.size = 0
 	b.page = 0
-	b.sort = make([]Sort, 0)
-	b.where = make(map[es.BoolClauseType][]BoolBuilder)
+	b.sort = make([]es.Sort, 0)
+	b.where = make(map[es.BoolClauseType][]es.BoolBuilder)
 	b.nested = make(map[es.BoolClauseType][]NestedFunc)
 	b.minimumShouldMatch = 0
 	b.Dsl = nil
@@ -105,13 +104,13 @@ func OrderBy(field string, order es.OrderType) *Builder {
 
 func (b *Builder) OrderBy(field string, orderType es.OrderType) *Builder {
 
-	sort := make(map[string]Order)
+	sort := make(map[string]es.Order)
 
 	switch orderType {
 	case es.Asc, es.Desc:
-		sort[field] = Order{Order: orderType}
+		sort[field] = es.Order{Order: orderType}
 	default:
-		sort[field] = Order{Order: es.Asc}
+		sort[field] = es.Order{Order: es.Asc}
 	}
 
 	b.sort = append(b.sort, sort)
@@ -755,7 +754,7 @@ func (b *Builder) whereMultiMatch(clauseTyp es.BoolClauseType, field []string, v
 	b.append(clauseTyp, textQuery)
 }
 
-func (b *Builder) append(clauseTyp es.BoolClauseType, clause BoolBuilder) {
+func (b *Builder) append(clauseTyp es.BoolClauseType, clause es.BoolBuilder) {
 	b.where[clauseTyp] = append(b.where[clauseTyp], clause)
 }
 

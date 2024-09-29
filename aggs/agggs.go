@@ -4,8 +4,11 @@ import (
 	"github.com/KingSolvewer/elasticsearch-query-builder/es"
 )
 
-type Aggregator interface {
-	Aggregate(args string) Aggregator
+type TopHitsFunc func() TopHits
+
+type TermsAggs struct {
+	Terms `json:"terms"`
+	Aggs  map[string]TopHitsAggs `json:"aggs,omitempty"`
 }
 
 type Terms struct {
@@ -18,11 +21,13 @@ type TermsParam struct {
 	Order map[string]es.OrderType `json:"order,omitempty"`
 }
 
-func (t TermsParam) Aggregate(field string) Aggregator {
-	return Terms{
-		Field:      field,
-		TermsParam: t,
-	}
+func (t TermsAggs) Aggregate(field string) es.Aggregator {
+	return t
+}
+
+type HistogramAggs struct {
+	Histogram `json:"histogram"`
+	Aggs      map[string]TopHitsAggs `json:"aggs,omitempty"`
 }
 
 type Histogram struct {
@@ -39,11 +44,13 @@ type HistogramParam struct {
 	Format         string                  `json:"format,omitempty"`
 }
 
-func (h HistogramParam) Aggregate(field string) Aggregator {
-	return Histogram{
-		Field:          field,
-		HistogramParam: h,
-	}
+func (h HistogramAggs) Aggregate(field string) es.Aggregator {
+	return h
+}
+
+type RangeAggs struct {
+	Range `json:"range"`
+	Aggs  map[string]TopHitsAggs `json:"aggs,omitempty"`
 }
 
 type Range struct {
@@ -63,14 +70,15 @@ type Ranges struct {
 	Key  string `json:"key,omitempty"`
 }
 
-func (r RangeParam) Aggregate(field string) Aggregator {
-	return Range{
-		Field:      field,
-		RangeParam: r,
-	}
+func (r RangeAggs) Aggregate(field string) es.Aggregator {
+	return r
 }
 
-type Avg struct {
+type AvgAggs struct {
+	Metric `json:"avg"`
+}
+
+type Metric struct {
 	Field string `json:"field"`
 	MetricParam
 }
@@ -79,19 +87,32 @@ type MetricParam struct {
 	Missing int `json:"missing,omitempty"`
 }
 
-func (a MetricParam) Aggregate(field string) Aggregator {
-	return Avg{
+func (a MetricParam) Aggregate(field string) es.Aggregator {
+	return Metric{
 		Field:       field,
 		MetricParam: a,
 	}
 }
 
-type Max = Avg
-type Min = Avg
-type Sum = Avg
-type Count = Avg
-type Stats = Avg
-type ExtendedStats = Avg
+type MaxAggs struct {
+	Metric `json:"max"`
+}
+type MinAggs struct {
+	Metric `json:"min"`
+}
+type SumAggs struct {
+	Metric `json:"sum"`
+}
+type StatsAggs struct {
+	Metric `json:"stats"`
+}
+type ExtendedStatsAggs struct {
+	Metric `json:"extended_stats"`
+}
+
+type CardinalityAggs struct {
+	Cardinality `json:"cardinality"`
+}
 
 type Cardinality struct {
 	Field string
@@ -103,9 +124,34 @@ type CardinalityParam struct {
 	PrecisionThreshold int `json:"precision_threshold,omitempty"`
 }
 
-func (p CardinalityParam) Aggregate(field string) Aggregator {
+func (p CardinalityParam) Aggregate(field string) es.Aggregator {
 	return Cardinality{
 		Field:            field,
 		CardinalityParam: p,
+	}
+}
+
+type TopHitsAggs struct {
+	TopHits `json:"top_hits"`
+}
+
+type TopHits struct {
+	From   int                 `json:"from,omitempty"`
+	Size   int                 `json:"size,omitempty"`
+	Sort   map[string]es.Order `json:"sort,omitempty"`
+	Source []string            `json:"_source,omitempty"`
+}
+
+func (t TopHits) Aggregate(field string) es.Aggregator {
+	return t
+}
+
+type NestedTopHits struct {
+	Aggs map[string]TopHits `json:"name,omitempty"`
+}
+
+func (n NestedTopHits) Aggregate(field string) es.Aggregator {
+	return NestedTopHits{
+		Aggs: make(map[string]TopHits),
 	}
 }
