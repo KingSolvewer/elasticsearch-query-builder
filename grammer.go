@@ -6,27 +6,27 @@ import (
 
 func (b *Builder) compile() {
 
-	b.Dsl = &es.Dsl{
+	b.query = &es.ElasticQuery{
 		Source: make([]string, 0),
 		Sort:   make([]es.Sort, 0),
 		Query:  make(map[string]es.QueryBuilder),
 	}
 
 	if b.fields != nil || len(b.fields) > 0 {
-		b.Dsl.Source = b.fields
+		b.query.Source = b.fields
 	}
 	if b.sort != nil || len(b.sort) > 0 {
-		b.Dsl.Sort = b.sort
+		b.query.Sort = b.sort
 	}
 
 	if b.size >= 0 {
-		b.Dsl.Size = es.Uint(b.size)
+		b.query.Size = es.Uint(b.size)
 	} else {
-		b.Dsl.Size = es.Uint(10)
+		b.query.Size = es.Uint(10)
 	}
 
 	if b.from > 0 {
-		b.Dsl.From = es.Uint(b.from)
+		b.query.From = es.Uint(b.from)
 	}
 
 	boolQuery := b.component()
@@ -35,8 +35,8 @@ func (b *Builder) compile() {
 		boolQuery.MinimumShouldMatch = b.minimumShouldMatch
 	}
 
-	b.Dsl.Query["bool"] = boolQuery
-	b.Dsl.Aggs = b.aggs
+	b.query.Query["bool"] = boolQuery
+	b.query.Aggs = b.aggs
 }
 
 func (b *Builder) component() es.BoolQuery {

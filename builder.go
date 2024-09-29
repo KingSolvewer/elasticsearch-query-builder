@@ -1,6 +1,7 @@
 package elastic
 
 import (
+	"encoding/json"
 	"github.com/KingSolvewer/elasticsearch-query-builder/es"
 	"github.com/KingSolvewer/elasticsearch-query-builder/fulltext"
 	"github.com/KingSolvewer/elasticsearch-query-builder/termlevel"
@@ -17,7 +18,7 @@ type Builder struct {
 	nested             map[es.BoolClauseType][]NestedFunc
 	minimumShouldMatch int
 	aggs               map[string]es.Aggregator
-	*es.Dsl
+	query              *es.ElasticQuery
 }
 
 var builder = NewBuilder()
@@ -32,9 +33,15 @@ func NewBuilder() *Builder {
 	}
 }
 
-func GetCondition() *Builder {
+func Dsl() ([]byte, error) {
+	return builder.Dsl()
+}
+
+func (b *Builder) Dsl() ([]byte, error) {
 	builder.compile()
-	return builder
+
+	dslBytes, err := json.Marshal(builder.query)
+	return dslBytes, err
 }
 
 func Reset() *Builder {
@@ -49,9 +56,22 @@ func (b *Builder) Reset() *Builder {
 	b.where = make(map[es.BoolClauseType][]es.BoolBuilder)
 	b.nested = make(map[es.BoolClauseType][]NestedFunc)
 	b.minimumShouldMatch = 0
-	b.Dsl = nil
+	b.query = nil
 
 	return b
+}
+
+func Clone() *Builder {
+	return builder.Clone()
+}
+
+func (b *Builder) Clone() *Builder {
+	return &Builder{
+		fields:             b.fields,
+		where:              b.where,
+		nested:             b.nested,
+		minimumShouldMatch: b.minimumShouldMatch,
+	}
 }
 
 func Select(fields ...string) *Builder {

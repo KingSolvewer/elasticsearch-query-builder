@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
 	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
@@ -69,16 +68,11 @@ func main() {
 	//elastic.DateGroupBy("posttime", aggs.HistogramParam{Interval: "1day", Format: "yyyy-MM-dd"})
 	//elastic.Range("create_time", aggs.RangeParam{Format: "yyyy-MM-dd", Ranges: []aggs.Ranges{{To: 50}, {From: 50, To: 100}, {From: 100}}})
 	//elastic.TopHits(aggs.TopHits{From: 0, Size: 10, Sort: map[string]es.Order{"posttime": {Order: es.Asc}}})
-	condition := elastic.GetCondition()
-	fmt.Println(condition)
 
-	dsl := condition.Dsl
-	fmt.Println(dsl)
-
-	dslJson, err := json.Marshal(dsl)
+	dsl, err := elastic.Dsl()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	fmt.Println(string(dslJson))
+	fmt.Println(string(dsl))
 }

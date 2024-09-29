@@ -92,7 +92,7 @@ func (i Uint) Page() uint {
 	return uint(i)
 }
 
-type Dsl struct {
+type ElasticQuery struct {
 	Source []string  `json:"_source,omitempty"`
 	Size   Paginator `json:"size,omitempty"`
 	From   Paginator `json:"from,omitempty"`
