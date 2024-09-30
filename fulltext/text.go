@@ -22,6 +22,8 @@ type MultiMatchQuery struct {
 	AppendParams
 }
 
+type AppendParamsFunc func() AppendParams
+
 type AppendParams struct {
 	Analyzer           string  `json:"analyzer,omitempty"`
 	Boost              float32 `json:"boost,omitempty"`

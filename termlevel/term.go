@@ -21,6 +21,8 @@ type Regexp struct {
 	RegexpParam
 }
 
+type RegexpParamFunc func() RegexpParam
+
 type RegexpParam struct {
 	Flags                 string `json:"flags,omitempty"`
 	CaseInsensitive       bool   `json:"case_insensitive,omitempty"`
@@ -32,6 +34,8 @@ type Wildcard struct {
 	Value string `json:"value"`
 	WildcardParam
 }
+
+type WildcardParamFunc func() WildcardParam
 
 type WildcardParam struct {
 	Boost           float32 `json:"boost,omitempty"` // 相当于es中的float类型

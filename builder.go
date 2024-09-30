@@ -179,25 +179,25 @@ func (b *Builder) WhereExists(field string) *Builder {
 }
 
 // WhereRegexp Must regexp 查询语句
-func WhereRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	return builder.WhereRegexp(field, value, params)
+func WhereRegexp(field string, value string, fn termlevel.RegexpParamFunc) *Builder {
+	return builder.WhereRegexp(field, value, fn)
 }
 
 // WhereRegexp Must regexp 查询语句
-func (b *Builder) WhereRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	b.regexp(esearch.Must, field, value, params)
+func (b *Builder) WhereRegexp(field string, value string, fn termlevel.RegexpParamFunc) *Builder {
+	b.regexp(esearch.Must, field, value, fn)
 
 	return b
 }
 
 // WhereWildcard Must wildcard 查询语句
-func WhereWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	return builder.WhereWildcard(field, value, params)
+func WhereWildcard(field string, value string, fn termlevel.WildcardParamFunc) *Builder {
+	return builder.WhereWildcard(field, value, fn)
 }
 
 // WhereWildcard Must wildcard 查询语句
-func (b *Builder) WhereWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	b.wildcard(esearch.Must, field, value, params)
+func (b *Builder) WhereWildcard(field string, value string, fn termlevel.WildcardParamFunc) *Builder {
+	b.wildcard(esearch.Must, field, value, fn)
 
 	return b
 }
@@ -240,24 +240,24 @@ func (b *Builder) WhereRange(field string, value any, rangeType esearch.RangeTyp
 }
 
 // WhereMatch Must match 匹配
-func WhereMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
-	return builder.WhereMatch(field, value, matchType, params)
+func WhereMatch(field string, value string, matchType esearch.MatchType, fn fulltext.AppendParamsFunc) *Builder {
+	return builder.WhereMatch(field, value, matchType, fn)
 }
 
 // WhereMatch Must match 匹配
-func (b *Builder) WhereMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
-	b.whereMatch(esearch.Must, field, value, matchType, params)
+func (b *Builder) WhereMatch(field string, value string, matchType esearch.MatchType, fn fulltext.AppendParamsFunc) *Builder {
+	b.whereMatch(esearch.Must, field, value, matchType, fn)
 	return b
 }
 
 // WhereMultiMatch Must multi_match 匹配
-func WhereMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
-	return builder.WhereMultiMatch(field, value, fieldType, params)
+func WhereMultiMatch(field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) *Builder {
+	return builder.WhereMultiMatch(field, value, fieldType, fn)
 }
 
 // WhereMultiMatch Must multi_match 匹配
-func (b *Builder) WhereMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
-	b.whereMultiMatch(esearch.Must, field, value, fieldType, params)
+func (b *Builder) WhereMultiMatch(field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) *Builder {
+	b.whereMultiMatch(esearch.Must, field, value, fieldType, fn)
 
 	return b
 }
@@ -299,25 +299,25 @@ func (b *Builder) WhereNotExistsNot(field string) *Builder {
 }
 
 // WhereNotRegexp MustNot regexp 查询语句
-func WhereNotRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	return builder.WhereNotRegexp(field, value, params)
+func WhereNotRegexp(field string, value string, fn termlevel.RegexpParamFunc) *Builder {
+	return builder.WhereNotRegexp(field, value, fn)
 }
 
 // WhereNotRegexp MustNot regexp 查询语句
-func (b *Builder) WhereNotRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	b.regexp(esearch.MustNot, field, value, params)
+func (b *Builder) WhereNotRegexp(field string, value string, fn termlevel.RegexpParamFunc) *Builder {
+	b.regexp(esearch.MustNot, field, value, fn)
 
 	return b
 }
 
 // WhereNotWildcard MustNot wildcard 查询语句
-func WhereNotWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	return builder.WhereNotWildcard(field, value, params)
+func WhereNotWildcard(field string, value string, fn termlevel.WildcardParamFunc) *Builder {
+	return builder.WhereNotWildcard(field, value, fn)
 }
 
 // WhereNotWildcard MustNot wildcard 查询语句
-func (b *Builder) WhereNotWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	b.wildcard(esearch.MustNot, field, value, params)
+func (b *Builder) WhereNotWildcard(field string, value string, fn termlevel.WildcardParamFunc) *Builder {
+	b.wildcard(esearch.MustNot, field, value, fn)
 
 	return b
 }
@@ -359,24 +359,24 @@ func (b *Builder) WhereNotRange(field string, value int, rangeType esearch.Range
 }
 
 // WhereNotMatch MustNot match 匹配
-func WhereNotMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
-	return builder.WhereNotMatch(field, value, matchType, params)
+func WhereNotMatch(field string, value string, matchType esearch.MatchType, fn fulltext.AppendParamsFunc) *Builder {
+	return builder.WhereNotMatch(field, value, matchType, fn)
 }
 
 // WhereNotMatch MustNot match 匹配
-func (b *Builder) WhereNotMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
-	b.whereMatch(esearch.MustNot, field, value, matchType, params)
+func (b *Builder) WhereNotMatch(field string, value string, matchType esearch.MatchType, fn fulltext.AppendParamsFunc) *Builder {
+	b.whereMatch(esearch.MustNot, field, value, matchType, fn)
 	return b
 }
 
 // WhereNotMultiMatch MustNot multi_match 匹配
-func WhereNotMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
-	return builder.WhereNotMultiMatch(field, value, fieldType, params)
+func WhereNotMultiMatch(field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) *Builder {
+	return builder.WhereNotMultiMatch(field, value, fieldType, fn)
 }
 
 // WhereNotMultiMatch MustNot multi_match 匹配
-func (b *Builder) WhereNotMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
-	b.whereMultiMatch(esearch.MustNot, field, value, fieldType, params)
+func (b *Builder) WhereNotMultiMatch(field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) *Builder {
+	b.whereMultiMatch(esearch.MustNot, field, value, fieldType, fn)
 
 	return b
 }
@@ -418,25 +418,25 @@ func (b *Builder) OrWhereExists(field string) *Builder {
 }
 
 // OrWhereRegexp Should regexp 查询语句
-func OrWhereRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	return builder.OrWhereRegexp(field, value, params)
+func OrWhereRegexp(field string, value string, fn termlevel.RegexpParamFunc) *Builder {
+	return builder.OrWhereRegexp(field, value, fn)
 }
 
 // OrWhereRegexp Should regexp 查询语句
-func (b *Builder) OrWhereRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	b.regexp(esearch.Should, field, value, params)
+func (b *Builder) OrWhereRegexp(field string, value string, fn termlevel.RegexpParamFunc) *Builder {
+	b.regexp(esearch.Should, field, value, fn)
 
 	return b
 }
 
 // OrWhereWildcard Should wildcard 查询语句
-func OrWhereWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	return builder.OrWhereWildcard(field, value, params)
+func OrWhereWildcard(field string, value string, fn termlevel.WildcardParamFunc) *Builder {
+	return builder.OrWhereWildcard(field, value, fn)
 }
 
 // OrWhereWildcard Should wildcard 查询语句
-func (b *Builder) OrWhereWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	b.wildcard(esearch.Should, field, value, params)
+func (b *Builder) OrWhereWildcard(field string, value string, fn termlevel.WildcardParamFunc) *Builder {
+	b.wildcard(esearch.Should, field, value, fn)
 
 	return b
 }
@@ -480,24 +480,24 @@ func (b *Builder) OrWhereRange(field string, value int, rangeType esearch.RangeT
 }
 
 // OrWhereMatch Should match 匹配
-func OrWhereMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
-	return builder.OrWhereMatch(field, value, matchType, params)
+func OrWhereMatch(field string, value string, matchType esearch.MatchType, fn fulltext.AppendParamsFunc) *Builder {
+	return builder.OrWhereMatch(field, value, matchType, fn)
 }
 
 // OrWhereMatch Should match 匹配
-func (b *Builder) OrWhereMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
-	b.whereMatch(esearch.Should, field, value, matchType, params)
+func (b *Builder) OrWhereMatch(field string, value string, matchType esearch.MatchType, fn fulltext.AppendParamsFunc) *Builder {
+	b.whereMatch(esearch.Should, field, value, matchType, fn)
 	return b
 }
 
 // OrWhereMultiMatch Should multi_match 匹配
-func OrWhereMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
-	return builder.OrWhereMultiMatch(field, value, fieldType, params)
+func OrWhereMultiMatch(field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) *Builder {
+	return builder.OrWhereMultiMatch(field, value, fieldType, fn)
 }
 
 // OrWhereMultiMatch Should multi_match 匹配
-func (b *Builder) OrWhereMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
-	b.whereMultiMatch(esearch.Should, field, value, fieldType, params)
+func (b *Builder) OrWhereMultiMatch(field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) *Builder {
+	b.whereMultiMatch(esearch.Should, field, value, fieldType, fn)
 
 	return b
 }
@@ -548,25 +548,25 @@ func (b *Builder) FilterExists(field string) *Builder {
 }
 
 // FilterRegexp Filter exists 查询语句
-func FilterRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	return builder.FilterRegexp(field, value, params)
+func FilterRegexp(field string, value string, fn termlevel.RegexpParamFunc) *Builder {
+	return builder.FilterRegexp(field, value, fn)
 }
 
 // FilterRegexp Filter exists 查询语句
-func (b *Builder) FilterRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	b.regexp(esearch.FilterClause, field, value, params)
+func (b *Builder) FilterRegexp(field string, value string, fn termlevel.RegexpParamFunc) *Builder {
+	b.regexp(esearch.FilterClause, field, value, fn)
 
 	return b
 }
 
 // FilterWildcard Filter wildcard 查询语句
-func FilterWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	return builder.FilterWildcard(field, value, params)
+func FilterWildcard(field string, value string, fn termlevel.WildcardParamFunc) *Builder {
+	return builder.FilterWildcard(field, value, fn)
 }
 
 // FilterWildcard Filter wildcard 查询语句
-func (b *Builder) FilterWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	b.wildcard(esearch.FilterClause, field, value, params)
+func (b *Builder) FilterWildcard(field string, value string, fn termlevel.WildcardParamFunc) *Builder {
+	b.wildcard(esearch.FilterClause, field, value, fn)
 
 	return b
 }
@@ -610,24 +610,24 @@ func (b *Builder) FilterRange(field string, value int, rangeType esearch.RangeTy
 }
 
 // FilterMatch Filter match 匹配
-func FilterMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
-	return builder.FilterMatch(field, value, matchType, params)
+func FilterMatch(field string, value string, matchType esearch.MatchType, fn fulltext.AppendParamsFunc) *Builder {
+	return builder.FilterMatch(field, value, matchType, fn)
 }
 
 // FilterMatch Filter match 匹配
-func (b *Builder) FilterMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
-	b.whereMatch(esearch.FilterClause, field, value, matchType, params)
+func (b *Builder) FilterMatch(field string, value string, matchType esearch.MatchType, fn fulltext.AppendParamsFunc) *Builder {
+	b.whereMatch(esearch.FilterClause, field, value, matchType, fn)
 	return b
 }
 
 // FilterMultiMatch Filter multi_match 匹配
-func FilterMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
-	return builder.FilterMultiMatch(field, value, fieldType, params)
+func FilterMultiMatch(field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) *Builder {
+	return builder.FilterMultiMatch(field, value, fieldType, fn)
 }
 
 // FilterMultiMatch Filter multi_match 匹配
-func (b *Builder) FilterMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
-	b.whereMultiMatch(esearch.FilterClause, field, value, fieldType, params)
+func (b *Builder) FilterMultiMatch(field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) *Builder {
+	b.whereMultiMatch(esearch.FilterClause, field, value, fieldType, fn)
 
 	return b
 }
@@ -680,22 +680,31 @@ func (b *Builder) exists(clauseTyp esearch.BoolClauseType, field string) {
 	b.append(clauseTyp, term)
 }
 
-func (b *Builder) regexp(clauseTyp esearch.BoolClauseType, field string, value string, params termlevel.RegexpParam) {
+func (b *Builder) regexp(clauseTyp esearch.BoolClauseType, field string, value string, fn termlevel.RegexpParamFunc) {
 	term := termlevel.TermQuery{
 		Regexp: make(map[string]termlevel.Regexp),
 	}
 
-	term.Regexp[field] = termlevel.Regexp{Value: value, RegexpParam: params}
+	regexp := termlevel.Regexp{Value: value}
+	if fn != nil {
+		regexp.RegexpParam = fn()
+	}
+
+	term.Regexp[field] = regexp
 
 	b.append(clauseTyp, term)
 }
 
-func (b *Builder) wildcard(clauseTyp esearch.BoolClauseType, field string, value string, params termlevel.WildcardParam) {
+func (b *Builder) wildcard(clauseTyp esearch.BoolClauseType, field string, value string, fn termlevel.WildcardParamFunc) {
 	term := termlevel.TermQuery{
 		Wildcard: make(map[string]termlevel.Wildcard),
 	}
 
-	term.Wildcard[field] = termlevel.Wildcard{Value: value, WildcardParam: params}
+	wildcard := termlevel.Wildcard{Value: value}
+	if fn != nil {
+		wildcard.WildcardParam = fn()
+	}
+	term.Wildcard[field] = wildcard
 
 	b.append(clauseTyp, term)
 }
@@ -746,13 +755,16 @@ func (b *Builder) rangeQuery(clauseTyp esearch.BoolClauseType, field string, ran
 	b.append(clauseTyp, termQuery)
 }
 
-func (b *Builder) whereMatch(clauseTyp esearch.BoolClauseType, field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) {
+func (b *Builder) whereMatch(clauseTyp esearch.BoolClauseType, field string, value string, matchType esearch.MatchType, fn func() fulltext.AppendParams) {
 	textQuery := fulltext.TextQuery{
 		Match:       make(map[string]fulltext.MatchQuery),
 		MatchPhrase: make(map[string]fulltext.MatchQuery),
 	}
 
-	matchQuery := fulltext.MatchQuery{Query: value, AppendParams: params}
+	matchQuery := fulltext.MatchQuery{Query: value}
+	if fn != nil {
+		matchQuery.AppendParams = fn()
+	}
 
 	switch matchType {
 	case esearch.Match:
@@ -767,7 +779,7 @@ func (b *Builder) whereMatch(clauseTyp esearch.BoolClauseType, field string, val
 	b.append(clauseTyp, textQuery)
 }
 
-func (b *Builder) whereMultiMatch(clauseTyp esearch.BoolClauseType, field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) {
+func (b *Builder) whereMultiMatch(clauseTyp esearch.BoolClauseType, field []string, value string, fieldType esearch.FieldType, fn fulltext.AppendParamsFunc) {
 	if field == nil || len(field) == 0 {
 		return
 	}
@@ -780,10 +792,13 @@ func (b *Builder) whereMultiMatch(clauseTyp esearch.BoolClauseType, field []stri
 	textQuery := fulltext.TextQuery{}
 
 	multiMatch := &fulltext.MultiMatchQuery{
-		Query:        value,
-		Type:         typ,
-		Fields:       field,
-		AppendParams: params,
+		Query:  value,
+		Type:   typ,
+		Fields: field,
+	}
+
+	if fn != nil {
+		multiMatch.AppendParams = fn()
 	}
 
 	textQuery.MultiMatch = multiMatch
