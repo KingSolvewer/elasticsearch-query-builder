@@ -58,7 +58,7 @@ func (b *Builder) component() esearch.BoolQuery {
 	for key, fns := range b.nested {
 		for _, fn := range fns {
 			newBuilder := NewBuilder()
-			newBuilder = fn(newBuilder)
+			fn(newBuilder)
 			newBoolQuery := newBuilder.component()
 
 			newQuery := make(esearch.Query)

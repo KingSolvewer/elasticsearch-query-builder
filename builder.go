@@ -7,7 +7,7 @@ import (
 	"github.com/KingSolvewer/elasticsearch-query-builder/termlevel"
 )
 
-type NestedFunc func(b *Builder) *Builder
+type NestedFunc func(b *Builder)
 
 type Builder struct {
 	fields             []string

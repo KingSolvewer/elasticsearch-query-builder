@@ -64,6 +64,8 @@ func main() {
 		return aggs.TopHitsParam{Size: 43}
 	}).Sum("count", aggs.MetricParam{}).Stats("state", aggs.MetricParam{}).TopHitsFunc(func(b *elastic.Builder) *elastic.Builder {
 		return b.Size(100).Select("state,title").OrderBy("news_posttime", esearch.Desc)
+	}).WhereNested(func(b *elastic.Builder) {
+		b.OrWhere("fsaf", "fsadfsa").OrWhere("abc", "abc")
 	})
 	//elastic.DateGroupBy("posttime", aggs.HistogramParam{Interval: "1day", Format: "yyyy-MM-dd"})
 	//elastic.Range("create_time", aggs.RangeParam{Format: "yyyy-MM-dd", Ranges: []aggs.Ranges{{To: 50}, {From: 50, To: 100}, {From: 100}}})
@@ -73,6 +75,7 @@ func main() {
 
 	fmt.Println(dsl)
 
+	return
 	builder := elastic.NewBuilder().Select("status").Where("status", 1000).Where("title", "中国").OrWhere("status", 13).WhereNot("country", "日本").Filter("city", "合肥")
 	//elastic.OrderBy("status", es.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]es.OrderType{"_count": es.Asc}}, func() aggs.TopHitsParam {
 	//	return aggs.TopHitsParam{From: 0, Size: 100}
