@@ -4,7 +4,7 @@ import (
 	"fmt"
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
 	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
-	"github.com/KingSolvewer/elasticsearch-query-builder/es"
+	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 	"log"
 )
 
@@ -58,12 +58,12 @@ func main() {
 	//})
 
 	elastic.Where("status", 1).Where("title", "中国").OrWhere("status", 1).WhereNot("country", "日本").Filter("city", "合肥")
-	elastic.OrderBy("status", es.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]es.OrderType{"_count": es.Asc}}, func() aggs.TopHitsParam {
+	elastic.OrderBy("status", esearch.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]esearch.OrderType{"_count": esearch.Asc}}, func() aggs.TopHitsParam {
 		return aggs.TopHitsParam{From: 0, Size: 100}
 	}).GroupBy("modify_date", aggs.TermsParam{}, func() aggs.TopHitsParam {
 		return aggs.TopHitsParam{Size: 43}
 	}).Sum("count", aggs.MetricParam{}).Stats("state", aggs.MetricParam{}).TopHitsFunc(func(b *elastic.Builder) *elastic.Builder {
-		return b.Size(100).Select("state,title").OrderBy("news_posttime", es.Desc)
+		return b.Size(100).Select("state,title").OrderBy("news_posttime", esearch.Desc)
 	})
 	//elastic.DateGroupBy("posttime", aggs.HistogramParam{Interval: "1day", Format: "yyyy-MM-dd"})
 	//elastic.Range("create_time", aggs.RangeParam{Format: "yyyy-MM-dd", Ranges: []aggs.Ranges{{To: 50}, {From: 50, To: 100}, {From: 100}}})

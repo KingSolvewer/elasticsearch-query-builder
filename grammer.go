@@ -1,15 +1,15 @@
 package elastic
 
 import (
-	"github.com/KingSolvewer/elasticsearch-query-builder/es"
+	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 )
 
 func (b *Builder) compile() {
 
-	b.query = &es.ElasticQuery{
+	b.query = &esearch.ElasticQuery{
 		Source: make([]string, 0),
-		Sort:   make([]es.Sort, 0),
-		Query:  make(map[string]es.QueryBuilder),
+		Sort:   make([]esearch.Sort, 0),
+		Query:  make(map[string]esearch.QueryBuilder),
 	}
 
 	if b.fields != nil || len(b.fields) > 0 {
@@ -20,13 +20,13 @@ func (b *Builder) compile() {
 	}
 
 	if b.size >= 0 {
-		b.query.Size = es.Uint(b.size)
+		b.query.Size = esearch.Uint(b.size)
 	} else {
-		b.query.Size = es.Uint(10)
+		b.query.Size = esearch.Uint(10)
 	}
 
 	if b.from > 0 {
-		b.query.From = es.Uint(b.from)
+		b.query.From = esearch.Uint(b.from)
 	}
 
 	boolQuery := b.component()
@@ -39,18 +39,18 @@ func (b *Builder) compile() {
 	b.query.Aggs = b.aggs
 }
 
-func (b *Builder) component() es.BoolQuery {
-	boolQuery := es.BoolQuery{}
+func (b *Builder) component() esearch.BoolQuery {
+	boolQuery := esearch.BoolQuery{}
 
 	for key, items := range b.where {
 		switch key {
-		case es.Must:
+		case esearch.Must:
 			boolQuery.Must = append(boolQuery.Must, items...)
-		case es.MustNot:
+		case esearch.MustNot:
 			boolQuery.MustNot = append(boolQuery.MustNot, items...)
-		case es.Should:
+		case esearch.Should:
 			boolQuery.Should = append(boolQuery.Should, items...)
-		case es.FilterClause:
+		case esearch.FilterClause:
 			boolQuery.Filter = append(boolQuery.Filter, items...)
 		}
 	}
@@ -61,17 +61,17 @@ func (b *Builder) component() es.BoolQuery {
 			newBuilder = fn(newBuilder)
 			newBoolQuery := newBuilder.component()
 
-			newQuery := make(es.Query)
+			newQuery := make(esearch.Query)
 			newQuery["bool"] = newBoolQuery
 
 			switch key {
-			case es.Must:
+			case esearch.Must:
 				boolQuery.Must = append(boolQuery.Must, newQuery)
-			case es.MustNot:
+			case esearch.MustNot:
 				boolQuery.MustNot = append(boolQuery.MustNot, newQuery)
-			case es.Should:
+			case esearch.Should:
 				boolQuery.Should = append(boolQuery.Should, newQuery)
-			case es.FilterClause:
+			case esearch.FilterClause:
 				boolQuery.Filter = append(boolQuery.Filter, newQuery)
 			}
 		}

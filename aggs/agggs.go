@@ -1,7 +1,7 @@
 package aggs
 
 import (
-	"github.com/KingSolvewer/elasticsearch-query-builder/es"
+	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 )
 
 type TopHitsFunc func() TopHitsParam
@@ -17,11 +17,11 @@ type Terms struct {
 }
 
 type TermsParam struct {
-	Size  int                     `json:"size,omitempty"`
-	Order map[string]es.OrderType `json:"order,omitempty"`
+	Size  int                          `json:"size,omitempty"`
+	Order map[string]esearch.OrderType `json:"order,omitempty"`
 }
 
-func (t TermsAggs) Aggregate(field string) es.Aggregator {
+func (t TermsAggs) Aggregate(field string) esearch.Aggregator {
 	return t
 }
 
@@ -36,15 +36,15 @@ type Histogram struct {
 }
 
 type HistogramParam struct {
-	Interval       any                     `json:"interval"`
-	MinDocCount    int                     `json:"min_doc_count,omitempty"`
-	ExtendedBounds map[string]int          `json:"extended_bounds,omitempty"`
-	Order          map[string]es.OrderType `json:"order,omitempty"`
-	Offset         int                     `json:"offset,omitempty"`
-	Format         string                  `json:"format,omitempty"`
+	Interval       any                          `json:"interval"`
+	MinDocCount    int                          `json:"min_doc_count,omitempty"`
+	ExtendedBounds map[string]int               `json:"extended_bounds,omitempty"`
+	Order          map[string]esearch.OrderType `json:"order,omitempty"`
+	Offset         int                          `json:"offset,omitempty"`
+	Format         string                       `json:"format,omitempty"`
 }
 
-func (h HistogramAggs) Aggregate(field string) es.Aggregator {
+func (h HistogramAggs) Aggregate(field string) esearch.Aggregator {
 	return h
 }
 
@@ -70,7 +70,7 @@ type Ranges struct {
 	Key  string `json:"key,omitempty"`
 }
 
-func (r RangeAggs) Aggregate(field string) es.Aggregator {
+func (r RangeAggs) Aggregate(field string) esearch.Aggregator {
 	return r
 }
 
@@ -87,7 +87,7 @@ type MetricParam struct {
 	Missing int `json:"missing,omitempty"`
 }
 
-func (a MetricParam) Aggregate(field string) es.Aggregator {
+func (a MetricParam) Aggregate(field string) esearch.Aggregator {
 	return Metric{
 		Field:       field,
 		MetricParam: a,
@@ -124,7 +124,7 @@ type CardinalityParam struct {
 	PrecisionThreshold int `json:"precision_threshold,omitempty"`
 }
 
-func (p CardinalityParam) Aggregate(field string) es.Aggregator {
+func (p CardinalityParam) Aggregate(field string) esearch.Aggregator {
 	return Cardinality{
 		Field:            field,
 		CardinalityParam: p,
@@ -136,43 +136,43 @@ type TopHitsAggs struct {
 }
 
 type TopHits struct {
-	From   es.Paginator `json:"from,omitempty"`
-	Size   es.Paginator `json:"size,omitempty"`
-	Sort   []es.Sort    `json:"sort,omitempty"`
-	Source []string     `json:"_source,omitempty"`
+	From   esearch.Paginator `json:"from,omitempty"`
+	Size   esearch.Paginator `json:"size,omitempty"`
+	Sort   []esearch.Sort    `json:"sort,omitempty"`
+	Source []string          `json:"_source,omitempty"`
 }
 
 type TopHitsParam struct {
-	From   uint                    `json:"from,omitempty"`
-	Size   uint                    `json:"size,omitempty"`
-	Sort   map[string]es.OrderType `json:"sort,omitempty"`
-	Source []string                `json:"_source,omitempty"`
+	From   uint                         `json:"from,omitempty"`
+	Size   uint                         `json:"size,omitempty"`
+	Sort   map[string]esearch.OrderType `json:"sort,omitempty"`
+	Source []string                     `json:"_source,omitempty"`
 }
 
-func (t TopHits) Aggregate(field string) es.Aggregator {
+func (t TopHits) Aggregate(field string) esearch.Aggregator {
 	return t
 }
 
 func (p TopHitsParam) TopHits() TopHits {
 	var (
-		size es.Uint
-		from es.Uint
+		size esearch.Uint
+		from esearch.Uint
 	)
 	if p.Size >= 0 {
-		size = es.Uint(p.Size)
+		size = esearch.Uint(p.Size)
 	} else {
-		size = es.Uint(10)
+		size = esearch.Uint(10)
 	}
 
 	if p.From > 0 {
-		from = es.Uint(p.From)
+		from = esearch.Uint(p.From)
 	}
 
-	sorts := make([]es.Sort, 0)
+	sorts := make([]esearch.Sort, 0)
 	if p.Sort != nil {
 		for field, order := range p.Sort {
-			sort := make(es.Sort)
-			sort[field] = es.Order{
+			sort := make(esearch.Sort)
+			sort[field] = esearch.Order{
 				Order: order,
 			}
 

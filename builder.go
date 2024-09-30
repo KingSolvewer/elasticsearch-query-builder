@@ -2,7 +2,7 @@ package elastic
 
 import (
 	"encoding/json"
-	"github.com/KingSolvewer/elasticsearch-query-builder/es"
+	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 	"github.com/KingSolvewer/elasticsearch-query-builder/fulltext"
 	"github.com/KingSolvewer/elasticsearch-query-builder/termlevel"
 )
@@ -13,12 +13,12 @@ type Builder struct {
 	fields             []string
 	size               uint
 	from               uint
-	sort               []es.Sort
-	where              map[es.BoolClauseType][]es.BoolBuilder
-	nested             map[es.BoolClauseType][]NestedFunc
+	sort               []esearch.Sort
+	where              map[esearch.BoolClauseType][]esearch.BoolBuilder
+	nested             map[esearch.BoolClauseType][]NestedFunc
 	minimumShouldMatch int
-	aggs               map[string]es.Aggregator
-	query              *es.ElasticQuery
+	aggs               map[string]esearch.Aggregator
+	query              *esearch.ElasticQuery
 }
 
 var builder = NewBuilder()
@@ -26,10 +26,10 @@ var builder = NewBuilder()
 func NewBuilder() *Builder {
 	return &Builder{
 		fields: make([]string, 0),
-		sort:   make([]es.Sort, 0),
-		where:  make(map[es.BoolClauseType][]es.BoolBuilder),
-		nested: make(map[es.BoolClauseType][]NestedFunc),
-		aggs:   make(map[string]es.Aggregator),
+		sort:   make([]esearch.Sort, 0),
+		where:  make(map[esearch.BoolClauseType][]esearch.BoolBuilder),
+		nested: make(map[esearch.BoolClauseType][]NestedFunc),
+		aggs:   make(map[string]esearch.Aggregator),
 	}
 }
 
@@ -61,9 +61,9 @@ func (b *Builder) Reset() *Builder {
 	b.fields = make([]string, 0)
 	b.size = 0
 	b.from = 0
-	b.sort = make([]es.Sort, 0)
-	b.where = make(map[es.BoolClauseType][]es.BoolBuilder)
-	b.nested = make(map[es.BoolClauseType][]NestedFunc)
+	b.sort = make([]esearch.Sort, 0)
+	b.where = make(map[esearch.BoolClauseType][]esearch.BoolBuilder)
+	b.nested = make(map[esearch.BoolClauseType][]NestedFunc)
 	b.minimumShouldMatch = 0
 	b.query = nil
 
@@ -75,12 +75,12 @@ func Clone() *Builder {
 }
 
 func (b *Builder) Clone() *Builder {
-	where := make(map[es.BoolClauseType][]es.BoolBuilder)
+	where := make(map[esearch.BoolClauseType][]esearch.BoolBuilder)
 	for key, boolBuilderSet := range b.where {
 		where[key] = append(where[key], boolBuilderSet...)
 	}
 
-	nested := make(map[es.BoolClauseType][]NestedFunc)
+	nested := make(map[esearch.BoolClauseType][]NestedFunc)
 	for key, nestedFuncSet := range b.nested {
 		nested[key] = append(nested[key], nestedFuncSet...)
 	}
@@ -134,19 +134,19 @@ func (b *Builder) From(value uint) *Builder {
 	return b
 }
 
-func OrderBy(field string, order es.OrderType) *Builder {
+func OrderBy(field string, order esearch.OrderType) *Builder {
 	return builder.OrderBy(field, order)
 }
 
-func (b *Builder) OrderBy(field string, orderType es.OrderType) *Builder {
+func (b *Builder) OrderBy(field string, orderType esearch.OrderType) *Builder {
 
-	sort := make(map[string]es.Order)
+	sort := make(map[string]esearch.Order)
 
 	switch orderType {
-	case es.Asc, es.Desc:
-		sort[field] = es.Order{Order: orderType}
+	case esearch.Asc, esearch.Desc:
+		sort[field] = esearch.Order{Order: orderType}
 	default:
-		sort[field] = es.Order{Order: es.Asc}
+		sort[field] = esearch.Order{Order: esearch.Asc}
 	}
 
 	b.sort = append(b.sort, sort)
@@ -161,7 +161,7 @@ func Where(field string, value any) *Builder {
 
 // Where Must term 查询语句
 func (b *Builder) Where(field string, value any) *Builder {
-	b.termQuery(es.Must, field, value)
+	b.termQuery(esearch.Must, field, value)
 
 	return b
 }
@@ -173,7 +173,7 @@ func WhereExists(field string) *Builder {
 
 // WhereExists Must exists 查询语句
 func (b *Builder) WhereExists(field string) *Builder {
-	b.exists(es.Must, field)
+	b.exists(esearch.Must, field)
 
 	return b
 }
@@ -185,7 +185,7 @@ func WhereRegexp(field string, value string, params termlevel.RegexpParam) *Buil
 
 // WhereRegexp Must regexp 查询语句
 func (b *Builder) WhereRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	b.regexp(es.Must, field, value, params)
+	b.regexp(esearch.Must, field, value, params)
 
 	return b
 }
@@ -197,7 +197,7 @@ func WhereWildcard(field string, value string, params termlevel.WildcardParam) *
 
 // WhereWildcard Must wildcard 查询语句
 func (b *Builder) WhereWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	b.wildcard(es.Must, field, value, params)
+	b.wildcard(esearch.Must, field, value, params)
 
 	return b
 }
@@ -209,7 +209,7 @@ func WhereIn(field string, value []any) *Builder {
 
 // WhereIn Must terms 查询语句
 func (b *Builder) WhereIn(field string, value []any) *Builder {
-	b.termsQuery(es.Must, field, value)
+	b.termsQuery(esearch.Must, field, value)
 
 	return b
 }
@@ -221,43 +221,43 @@ func WhereBetween(field string, value1, value2 int) *Builder {
 
 // WhereBetween Must Range ( gte:>=a and lte:<=b) 查询语句
 func (b *Builder) WhereBetween(field string, value1, value2 any) *Builder {
-	b.whereBetween(es.Must, field, value1, value2)
+	b.whereBetween(esearch.Must, field, value1, value2)
 
 	return b
 }
 
 // WhereRange Must Range 单向范围查询, gt:>a, lt:<a等等
-func WhereRange(field string, value int, rangeType es.RangeType) *Builder {
+func WhereRange(field string, value int, rangeType esearch.RangeType) *Builder {
 	return builder.WhereRange(field, value, rangeType)
 }
 
 // WhereRange Must Range 单向范围查询, gt:>a, lt:<a等等
-func (b *Builder) WhereRange(field string, value any, rangeType es.RangeType) *Builder {
+func (b *Builder) WhereRange(field string, value any, rangeType esearch.RangeType) *Builder {
 
-	b.whereRange(es.Must, field, value, rangeType)
+	b.whereRange(esearch.Must, field, value, rangeType)
 
 	return b
 }
 
 // WhereMatch Must match 匹配
-func WhereMatch(field string, value string, matchType es.MatchType, params fulltext.AppendParams) *Builder {
+func WhereMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
 	return builder.WhereMatch(field, value, matchType, params)
 }
 
 // WhereMatch Must match 匹配
-func (b *Builder) WhereMatch(field string, value string, matchType es.MatchType, params fulltext.AppendParams) *Builder {
-	b.whereMatch(es.Must, field, value, matchType, params)
+func (b *Builder) WhereMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
+	b.whereMatch(esearch.Must, field, value, matchType, params)
 	return b
 }
 
 // WhereMultiMatch Must multi_match 匹配
-func WhereMultiMatch(field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) *Builder {
+func WhereMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
 	return builder.WhereMultiMatch(field, value, fieldType, params)
 }
 
 // WhereMultiMatch Must multi_match 匹配
-func (b *Builder) WhereMultiMatch(field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) *Builder {
-	b.whereMultiMatch(es.Must, field, value, fieldType, params)
+func (b *Builder) WhereMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
+	b.whereMultiMatch(esearch.Must, field, value, fieldType, params)
 
 	return b
 }
@@ -269,7 +269,7 @@ func WhereNested(fn NestedFunc) *Builder {
 
 // WhereNested Must 嵌套查询, 例如在 must 语句中嵌套 should 语句
 func (b *Builder) WhereNested(fn NestedFunc) *Builder {
-	b.nested[es.Must] = append(b.nested[es.Must], fn)
+	b.nested[esearch.Must] = append(b.nested[esearch.Must], fn)
 
 	return b
 }
@@ -281,7 +281,7 @@ func WhereNot(field string, value string) *Builder {
 
 // WhereNot MustNot term 查询
 func (b *Builder) WhereNot(field string, value string) *Builder {
-	b.termQuery(es.MustNot, field, value)
+	b.termQuery(esearch.MustNot, field, value)
 
 	return b
 }
@@ -293,7 +293,7 @@ func WhereNotExistsNot(field string) *Builder {
 
 // WhereNotExistsNot MustNot exists 查询语句
 func (b *Builder) WhereNotExistsNot(field string) *Builder {
-	b.exists(es.MustNot, field)
+	b.exists(esearch.MustNot, field)
 
 	return b
 }
@@ -305,7 +305,7 @@ func WhereNotRegexp(field string, value string, params termlevel.RegexpParam) *B
 
 // WhereNotRegexp MustNot regexp 查询语句
 func (b *Builder) WhereNotRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	b.regexp(es.MustNot, field, value, params)
+	b.regexp(esearch.MustNot, field, value, params)
 
 	return b
 }
@@ -317,7 +317,7 @@ func WhereNotWildcard(field string, value string, params termlevel.WildcardParam
 
 // WhereNotWildcard MustNot wildcard 查询语句
 func (b *Builder) WhereNotWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	b.wildcard(es.MustNot, field, value, params)
+	b.wildcard(esearch.MustNot, field, value, params)
 
 	return b
 }
@@ -329,7 +329,7 @@ func WhereNotIn(field string, value []any) *Builder {
 
 // WhereNotIn Must terms 查询语句
 func (b *Builder) WhereNotIn(field string, value []any) *Builder {
-	b.termsQuery(es.MustNot, field, value)
+	b.termsQuery(esearch.MustNot, field, value)
 
 	return b
 }
@@ -341,42 +341,42 @@ func WhereNotBetween(field string, value1, value2 int) *Builder {
 
 // WhereNotBetween MustNot Range ( gte:>=a and lte:<=b) 查询语句
 func (b *Builder) WhereNotBetween(field string, value1, value2 int) *Builder {
-	b.whereBetween(es.MustNot, field, value1, value2)
+	b.whereBetween(esearch.MustNot, field, value1, value2)
 
 	return b
 }
 
 // WhereNotRange MustNot Range 单向范围查询, gt:>a, lt:<a等等
-func WhereNotRange(field string, value int, rangeType es.RangeType) *Builder {
+func WhereNotRange(field string, value int, rangeType esearch.RangeType) *Builder {
 	return builder.WhereNotRange(field, value, rangeType)
 }
 
 // WhereNotRange MustNot Range 单向范围查询, gt:>a, lt:<a等等
-func (b *Builder) WhereNotRange(field string, value int, rangeType es.RangeType) *Builder {
-	b.whereRange(es.MustNot, field, value, rangeType)
+func (b *Builder) WhereNotRange(field string, value int, rangeType esearch.RangeType) *Builder {
+	b.whereRange(esearch.MustNot, field, value, rangeType)
 
 	return b
 }
 
 // WhereNotMatch MustNot match 匹配
-func WhereNotMatch(field string, value string, matchType es.MatchType, params fulltext.AppendParams) *Builder {
+func WhereNotMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
 	return builder.WhereNotMatch(field, value, matchType, params)
 }
 
 // WhereNotMatch MustNot match 匹配
-func (b *Builder) WhereNotMatch(field string, value string, matchType es.MatchType, params fulltext.AppendParams) *Builder {
-	b.whereMatch(es.MustNot, field, value, matchType, params)
+func (b *Builder) WhereNotMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
+	b.whereMatch(esearch.MustNot, field, value, matchType, params)
 	return b
 }
 
 // WhereNotMultiMatch MustNot multi_match 匹配
-func WhereNotMultiMatch(field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) *Builder {
+func WhereNotMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
 	return builder.WhereNotMultiMatch(field, value, fieldType, params)
 }
 
 // WhereNotMultiMatch MustNot multi_match 匹配
-func (b *Builder) WhereNotMultiMatch(field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) *Builder {
-	b.whereMultiMatch(es.MustNot, field, value, fieldType, params)
+func (b *Builder) WhereNotMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
+	b.whereMultiMatch(esearch.MustNot, field, value, fieldType, params)
 
 	return b
 }
@@ -388,7 +388,7 @@ func WhereNotNested(fn NestedFunc) *Builder {
 
 // WhereNotNested Must 嵌套查询, 例如在 must 语句中嵌套 should 语句
 func (b *Builder) WhereNotNested(fn NestedFunc) *Builder {
-	b.nested[es.MustNot] = append(b.nested[es.MustNot], fn)
+	b.nested[esearch.MustNot] = append(b.nested[esearch.MustNot], fn)
 
 	return b
 }
@@ -400,7 +400,7 @@ func OrWhere(field string, value any) *Builder {
 
 // OrWhere Should term 查询语句
 func (b *Builder) OrWhere(field string, value any) *Builder {
-	b.termQuery(es.Should, field, value)
+	b.termQuery(esearch.Should, field, value)
 
 	return b
 }
@@ -412,7 +412,7 @@ func OrWhereExists(field string) *Builder {
 
 // OrWhereExists Should exists 查询语句
 func (b *Builder) OrWhereExists(field string) *Builder {
-	b.exists(es.Should, field)
+	b.exists(esearch.Should, field)
 
 	return b
 }
@@ -424,7 +424,7 @@ func OrWhereRegexp(field string, value string, params termlevel.RegexpParam) *Bu
 
 // OrWhereRegexp Should regexp 查询语句
 func (b *Builder) OrWhereRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	b.regexp(es.Should, field, value, params)
+	b.regexp(esearch.Should, field, value, params)
 
 	return b
 }
@@ -436,7 +436,7 @@ func OrWhereWildcard(field string, value string, params termlevel.WildcardParam)
 
 // OrWhereWildcard Should wildcard 查询语句
 func (b *Builder) OrWhereWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	b.wildcard(es.Should, field, value, params)
+	b.wildcard(esearch.Should, field, value, params)
 
 	return b
 }
@@ -448,7 +448,7 @@ func OrWhereIn(field string, value []any) *Builder {
 
 // OrWhereIn Should terms 查询语句
 func (b *Builder) OrWhereIn(field string, value []any) *Builder {
-	b.termsQuery(es.Should, field, value)
+	b.termsQuery(esearch.Should, field, value)
 
 	return b
 }
@@ -461,43 +461,43 @@ func OrWhereBetween(field string, value1, value2 int) *Builder {
 // OrWhereBetween Should Range ( gte:>=a and lte:<=b) 查询语句
 func (b *Builder) OrWhereBetween(field string, value1, value2 int) *Builder {
 
-	b.whereBetween(es.Should, field, value1, value2)
+	b.whereBetween(esearch.Should, field, value1, value2)
 
 	return b
 }
 
 // OrWhereRange Should Range 单向范围查询, gt:>a, lt:<a等等
-func OrWhereRange(field string, value int, rangeType es.RangeType) *Builder {
+func OrWhereRange(field string, value int, rangeType esearch.RangeType) *Builder {
 	return builder.OrWhereRange(field, value, rangeType)
 }
 
 // OrWhereRange Should Range 单向范围查询, gt:>a, lt:<a等等
-func (b *Builder) OrWhereRange(field string, value int, rangeType es.RangeType) *Builder {
+func (b *Builder) OrWhereRange(field string, value int, rangeType esearch.RangeType) *Builder {
 
-	b.whereRange(es.Should, field, value, rangeType)
+	b.whereRange(esearch.Should, field, value, rangeType)
 
 	return b
 }
 
 // OrWhereMatch Should match 匹配
-func OrWhereMatch(field string, value string, matchType es.MatchType, params fulltext.AppendParams) *Builder {
+func OrWhereMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
 	return builder.OrWhereMatch(field, value, matchType, params)
 }
 
 // OrWhereMatch Should match 匹配
-func (b *Builder) OrWhereMatch(field string, value string, matchType es.MatchType, params fulltext.AppendParams) *Builder {
-	b.whereMatch(es.Should, field, value, matchType, params)
+func (b *Builder) OrWhereMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
+	b.whereMatch(esearch.Should, field, value, matchType, params)
 	return b
 }
 
 // OrWhereMultiMatch Should multi_match 匹配
-func OrWhereMultiMatch(field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) *Builder {
+func OrWhereMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
 	return builder.OrWhereMultiMatch(field, value, fieldType, params)
 }
 
 // OrWhereMultiMatch Should multi_match 匹配
-func (b *Builder) OrWhereMultiMatch(field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) *Builder {
-	b.whereMultiMatch(es.Should, field, value, fieldType, params)
+func (b *Builder) OrWhereMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
+	b.whereMultiMatch(esearch.Should, field, value, fieldType, params)
 
 	return b
 }
@@ -509,7 +509,7 @@ func OrWhereNested(fn NestedFunc) *Builder {
 
 // OrWhereNested Should 嵌套查询, 例如在 must 语句中嵌套 should 语句
 func (b *Builder) OrWhereNested(fn NestedFunc) *Builder {
-	b.nested[es.Should] = append(b.nested[es.Should], fn)
+	b.nested[esearch.Should] = append(b.nested[esearch.Should], fn)
 
 	return b
 }
@@ -530,7 +530,7 @@ func Filter(field string, value any) *Builder {
 
 // Filter Filter term 查询语句
 func (b *Builder) Filter(field string, value any) *Builder {
-	b.termQuery(es.FilterClause, field, value)
+	b.termQuery(esearch.FilterClause, field, value)
 
 	return b
 }
@@ -542,7 +542,7 @@ func FilterExists(field string) *Builder {
 
 // FilterExists Filter exists 查询语句
 func (b *Builder) FilterExists(field string) *Builder {
-	b.exists(es.FilterClause, field)
+	b.exists(esearch.FilterClause, field)
 
 	return b
 }
@@ -554,7 +554,7 @@ func FilterRegexp(field string, value string, params termlevel.RegexpParam) *Bui
 
 // FilterRegexp Filter exists 查询语句
 func (b *Builder) FilterRegexp(field string, value string, params termlevel.RegexpParam) *Builder {
-	b.regexp(es.FilterClause, field, value, params)
+	b.regexp(esearch.FilterClause, field, value, params)
 
 	return b
 }
@@ -566,7 +566,7 @@ func FilterWildcard(field string, value string, params termlevel.WildcardParam) 
 
 // FilterWildcard Filter wildcard 查询语句
 func (b *Builder) FilterWildcard(field string, value string, params termlevel.WildcardParam) *Builder {
-	b.wildcard(es.FilterClause, field, value, params)
+	b.wildcard(esearch.FilterClause, field, value, params)
 
 	return b
 }
@@ -578,7 +578,7 @@ func FilterIn(field string, value []any) *Builder {
 
 // FilterIn Filter terms 查询语句
 func (b *Builder) FilterIn(field string, value []any) *Builder {
-	b.termsQuery(es.FilterClause, field, value)
+	b.termsQuery(esearch.FilterClause, field, value)
 
 	return b
 }
@@ -591,43 +591,43 @@ func FilterBetween(field string, value1, value2 int) *Builder {
 // FilterBetween Filter Range ( gte:>=a and lte:<=b) 查询语句
 func (b *Builder) FilterBetween(field string, value1, value2 int) *Builder {
 
-	b.whereBetween(es.FilterClause, field, value1, value2)
+	b.whereBetween(esearch.FilterClause, field, value1, value2)
 
 	return b
 }
 
 // FilterRange Filter Range 单向范围查询, gt:>a, lt:<a等等
-func FilterRange(field string, value int, rangeType es.RangeType) *Builder {
+func FilterRange(field string, value int, rangeType esearch.RangeType) *Builder {
 	return builder.FilterRange(field, value, rangeType)
 }
 
 // FilterRange Filter Range 单向范围查询, gt:>a, lt:<a等等
-func (b *Builder) FilterRange(field string, value int, rangeType es.RangeType) *Builder {
+func (b *Builder) FilterRange(field string, value int, rangeType esearch.RangeType) *Builder {
 
-	b.whereRange(es.FilterClause, field, value, rangeType)
+	b.whereRange(esearch.FilterClause, field, value, rangeType)
 
 	return b
 }
 
 // FilterMatch Filter match 匹配
-func FilterMatch(field string, value string, matchType es.MatchType, params fulltext.AppendParams) *Builder {
+func FilterMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
 	return builder.FilterMatch(field, value, matchType, params)
 }
 
 // FilterMatch Filter match 匹配
-func (b *Builder) FilterMatch(field string, value string, matchType es.MatchType, params fulltext.AppendParams) *Builder {
-	b.whereMatch(es.FilterClause, field, value, matchType, params)
+func (b *Builder) FilterMatch(field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) *Builder {
+	b.whereMatch(esearch.FilterClause, field, value, matchType, params)
 	return b
 }
 
 // FilterMultiMatch Filter multi_match 匹配
-func FilterMultiMatch(field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) *Builder {
+func FilterMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
 	return builder.FilterMultiMatch(field, value, fieldType, params)
 }
 
 // FilterMultiMatch Filter multi_match 匹配
-func (b *Builder) FilterMultiMatch(field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) *Builder {
-	b.whereMultiMatch(es.FilterClause, field, value, fieldType, params)
+func (b *Builder) FilterMultiMatch(field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) *Builder {
+	b.whereMultiMatch(esearch.FilterClause, field, value, fieldType, params)
 
 	return b
 }
@@ -639,12 +639,12 @@ func FilterNested(fn NestedFunc) *Builder {
 
 // FilterNested Filter 嵌套查询, 例如在 must 语句中嵌套 should 语句
 func (b *Builder) FilterNested(fn NestedFunc) *Builder {
-	b.nested[es.FilterClause] = append(b.nested[es.FilterClause], fn)
+	b.nested[esearch.FilterClause] = append(b.nested[esearch.FilterClause], fn)
 
 	return b
 }
 
-func (b *Builder) termQuery(clauseTyp es.BoolClauseType, field string, value any) {
+func (b *Builder) termQuery(clauseTyp esearch.BoolClauseType, field string, value any) {
 	ok := checkType(value)
 	if !ok {
 		return
@@ -661,7 +661,7 @@ func (b *Builder) termQuery(clauseTyp es.BoolClauseType, field string, value any
 	b.append(clauseTyp, term)
 }
 
-func (b *Builder) termsQuery(clauseTyp es.BoolClauseType, field string, value []any) {
+func (b *Builder) termsQuery(clauseTyp esearch.BoolClauseType, field string, value []any) {
 	terms := termlevel.TermQuery{
 		Terms: make(map[string][]any),
 	}
@@ -671,7 +671,7 @@ func (b *Builder) termsQuery(clauseTyp es.BoolClauseType, field string, value []
 	b.append(clauseTyp, terms)
 }
 
-func (b *Builder) exists(clauseTyp es.BoolClauseType, field string) {
+func (b *Builder) exists(clauseTyp esearch.BoolClauseType, field string) {
 	term := termlevel.TermQuery{
 		Exists: make(map[string]string),
 	}
@@ -680,7 +680,7 @@ func (b *Builder) exists(clauseTyp es.BoolClauseType, field string) {
 	b.append(clauseTyp, term)
 }
 
-func (b *Builder) regexp(clauseTyp es.BoolClauseType, field string, value string, params termlevel.RegexpParam) {
+func (b *Builder) regexp(clauseTyp esearch.BoolClauseType, field string, value string, params termlevel.RegexpParam) {
 	term := termlevel.TermQuery{
 		Regexp: make(map[string]termlevel.Regexp),
 	}
@@ -690,7 +690,7 @@ func (b *Builder) regexp(clauseTyp es.BoolClauseType, field string, value string
 	b.append(clauseTyp, term)
 }
 
-func (b *Builder) wildcard(clauseTyp es.BoolClauseType, field string, value string, params termlevel.WildcardParam) {
+func (b *Builder) wildcard(clauseTyp esearch.BoolClauseType, field string, value string, params termlevel.WildcardParam) {
 	term := termlevel.TermQuery{
 		Wildcard: make(map[string]termlevel.Wildcard),
 	}
@@ -700,7 +700,7 @@ func (b *Builder) wildcard(clauseTyp es.BoolClauseType, field string, value stri
 	b.append(clauseTyp, term)
 }
 
-func (b *Builder) whereRange(clauseTyp es.BoolClauseType, field string, value any, rangeType es.RangeType) {
+func (b *Builder) whereRange(clauseTyp esearch.BoolClauseType, field string, value any, rangeType esearch.RangeType) {
 	if !checkType(value) {
 		return
 	}
@@ -708,13 +708,13 @@ func (b *Builder) whereRange(clauseTyp es.BoolClauseType, field string, value an
 	rangeQuery := termlevel.RangeQuery{}
 
 	switch rangeType {
-	case es.Gt:
+	case esearch.Gt:
 		rangeQuery.Gt = value
-	case es.Gte:
+	case esearch.Gte:
 		rangeQuery.Gte = value
-	case es.Lt:
+	case esearch.Lt:
 		rangeQuery.Lt = value
-	case es.Lte:
+	case esearch.Lte:
 		rangeQuery.Lte = value
 	default:
 		rangeQuery.Gt = value
@@ -723,7 +723,7 @@ func (b *Builder) whereRange(clauseTyp es.BoolClauseType, field string, value an
 	b.rangeQuery(clauseTyp, field, rangeQuery)
 }
 
-func (b *Builder) whereBetween(clauseTyp es.BoolClauseType, field string, value1, value2 any) {
+func (b *Builder) whereBetween(clauseTyp esearch.BoolClauseType, field string, value1, value2 any) {
 	if !checkType(value1) || !checkType(value2) {
 		return
 	}
@@ -736,7 +736,7 @@ func (b *Builder) whereBetween(clauseTyp es.BoolClauseType, field string, value1
 	b.rangeQuery(clauseTyp, field, rangeQuery)
 }
 
-func (b *Builder) rangeQuery(clauseTyp es.BoolClauseType, field string, rangeQuery termlevel.RangeQuery) {
+func (b *Builder) rangeQuery(clauseTyp esearch.BoolClauseType, field string, rangeQuery termlevel.RangeQuery) {
 	termQuery := termlevel.TermQuery{
 		Range: make(map[string]termlevel.RangeQuery),
 	}
@@ -746,7 +746,7 @@ func (b *Builder) rangeQuery(clauseTyp es.BoolClauseType, field string, rangeQue
 	b.append(clauseTyp, termQuery)
 }
 
-func (b *Builder) whereMatch(clauseTyp es.BoolClauseType, field string, value string, matchType es.MatchType, params fulltext.AppendParams) {
+func (b *Builder) whereMatch(clauseTyp esearch.BoolClauseType, field string, value string, matchType esearch.MatchType, params fulltext.AppendParams) {
 	textQuery := fulltext.TextQuery{
 		Match:       make(map[string]fulltext.MatchQuery),
 		MatchPhrase: make(map[string]fulltext.MatchQuery),
@@ -755,11 +755,11 @@ func (b *Builder) whereMatch(clauseTyp es.BoolClauseType, field string, value st
 	matchQuery := fulltext.MatchQuery{Query: value, AppendParams: params}
 
 	switch matchType {
-	case es.Match:
+	case esearch.Match:
 		textQuery.Match[field] = matchQuery
-	case es.MatchPhrase:
+	case esearch.MatchPhrase:
 		textQuery.MatchPhrase[field] = matchQuery
-	case es.MatchPhrasePrefix:
+	case esearch.MatchPhrasePrefix:
 	default:
 		textQuery.Match[field] = matchQuery
 	}
@@ -767,14 +767,14 @@ func (b *Builder) whereMatch(clauseTyp es.BoolClauseType, field string, value st
 	b.append(clauseTyp, textQuery)
 }
 
-func (b *Builder) whereMultiMatch(clauseTyp es.BoolClauseType, field []string, value string, fieldType es.FieldType, params fulltext.AppendParams) {
+func (b *Builder) whereMultiMatch(clauseTyp esearch.BoolClauseType, field []string, value string, fieldType esearch.FieldType, params fulltext.AppendParams) {
 	if field == nil || len(field) == 0 {
 		return
 	}
 
-	typ, ok := es.FieldTypeSet[fieldType]
+	typ, ok := esearch.FieldTypeSet[fieldType]
 	if !ok {
-		typ = es.FieldTypeSet[es.BestFields]
+		typ = esearch.FieldTypeSet[esearch.BestFields]
 	}
 
 	textQuery := fulltext.TextQuery{}
@@ -790,7 +790,7 @@ func (b *Builder) whereMultiMatch(clauseTyp es.BoolClauseType, field []string, v
 	b.append(clauseTyp, textQuery)
 }
 
-func (b *Builder) append(clauseTyp es.BoolClauseType, clause es.BoolBuilder) {
+func (b *Builder) append(clauseTyp esearch.BoolClauseType, clause esearch.BoolBuilder) {
 	b.where[clauseTyp] = append(b.where[clauseTyp], clause)
 }
 

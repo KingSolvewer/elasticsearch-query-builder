@@ -2,7 +2,7 @@ package elastic
 
 import (
 	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
-	"github.com/KingSolvewer/elasticsearch-query-builder/es"
+	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 )
 
 func GroupBy(field string, param aggs.TermsParam, hitsFunc aggs.TopHitsFunc) *Builder {
@@ -22,7 +22,7 @@ func (b *Builder) GroupBy(field string, param aggs.TermsParam, hitsFunc aggs.Top
 		terms.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
 	}
 
-	return b.Aggs(field+"_"+es.Terms, terms)
+	return b.Aggs(field+"_"+esearch.Terms, terms)
 }
 
 func Histogram(field string, param aggs.HistogramParam, hitsFunc aggs.TopHitsFunc) *Builder {
@@ -42,7 +42,7 @@ func (b *Builder) Histogram(field string, param aggs.HistogramParam, hitsFunc ag
 		histogram.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
 	}
 
-	return b.Aggs(field+"_"+es.Histogram, histogram)
+	return b.Aggs(field+"_"+esearch.Histogram, histogram)
 }
 
 func DateGroupBy(field string, param aggs.HistogramParam, hitsFunc aggs.TopHitsFunc) *Builder {
@@ -73,7 +73,7 @@ func (b *Builder) Range(field string, param aggs.RangeParam, hitsFunc aggs.TopHi
 		rangeAggs.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
 	}
 
-	return b.Aggs(field+"_"+es.Range, rangeAggs)
+	return b.Aggs(field+"_"+esearch.Range, rangeAggs)
 }
 
 func DateRange(field string, param aggs.RangeParam, hitsFunc aggs.TopHitsFunc) *Builder {
@@ -84,11 +84,11 @@ func (b *Builder) DateRange(field string, param aggs.RangeParam, hitsFunc aggs.T
 	return b.Range(field, param, hitsFunc)
 }
 
-func Aggs(aggsField string, aggregator es.Aggregator) *Builder {
+func Aggs(aggsField string, aggregator esearch.Aggregator) *Builder {
 	return builder.Aggs(aggsField, aggregator)
 }
 
-func (b *Builder) Aggs(aggsField string, aggregator es.Aggregator) *Builder {
+func (b *Builder) Aggs(aggsField string, aggregator esearch.Aggregator) *Builder {
 	b.aggs[aggsField] = aggregator
 	return b
 }
@@ -104,7 +104,7 @@ func (b *Builder) Avg(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+es.Avg, avgAggs)
+	return b.Aggs(field+"_"+esearch.Avg, avgAggs)
 }
 
 func Max(field string, param aggs.MetricParam) *Builder {
@@ -119,7 +119,7 @@ func (b *Builder) Max(field string, param aggs.MetricParam) *Builder {
 		},
 	}
 
-	return b.Aggs(field+"_"+es.Max, maxAggs)
+	return b.Aggs(field+"_"+esearch.Max, maxAggs)
 }
 
 func Min(field string, param aggs.MetricParam) *Builder {
@@ -133,7 +133,7 @@ func (b *Builder) Min(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+es.Min, minAggs)
+	return b.Aggs(field+"_"+esearch.Min, minAggs)
 }
 
 func Sum(field string, param aggs.MetricParam) *Builder {
@@ -147,7 +147,7 @@ func (b *Builder) Sum(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+es.Sum, sumAggs)
+	return b.Aggs(field+"_"+esearch.Sum, sumAggs)
 }
 
 func Stats(field string, param aggs.MetricParam) *Builder {
@@ -161,7 +161,7 @@ func (b *Builder) Stats(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+es.Stats, statsAggs)
+	return b.Aggs(field+"_"+esearch.Stats, statsAggs)
 }
 
 func ExtendedStats(field string, param aggs.MetricParam) *Builder {
@@ -175,7 +175,7 @@ func (b *Builder) ExtendedStats(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+es.ExtendedStats, statsAggs)
+	return b.Aggs(field+"_"+esearch.ExtendedStats, statsAggs)
 }
 
 func TopHits(hits aggs.TopHitsParam) *Builder {
@@ -185,27 +185,27 @@ func TopHits(hits aggs.TopHitsParam) *Builder {
 func (b *Builder) TopHits(hits aggs.TopHitsParam) *Builder {
 	hitsAggs := hits.TopHits()
 
-	return b.Aggs(es.TopHits, hitsAggs)
+	return b.Aggs(esearch.TopHits, hitsAggs)
 }
 
 func (b *Builder) TopHitsFunc(fn func(b *Builder) *Builder) *Builder {
 	hits := fn(NewBuilder()).topHits()
-	return b.Aggs(es.TopHits, hits)
+	return b.Aggs(esearch.TopHits, hits)
 }
 
 func (b *Builder) topHits() aggs.TopHits {
 	var (
-		size es.Uint
-		from es.Uint
+		size esearch.Uint
+		from esearch.Uint
 	)
 	if b.size >= 0 {
-		size = es.Uint(b.size)
+		size = esearch.Uint(b.size)
 	} else {
-		size = es.Uint(10)
+		size = esearch.Uint(10)
 	}
 
 	if b.from > 0 {
-		from = es.Uint(b.from)
+		from = esearch.Uint(b.from)
 	}
 
 	topHits := aggs.TopHits{
