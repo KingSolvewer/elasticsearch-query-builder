@@ -62,8 +62,8 @@ func main() {
 		return aggs.TopHitsParam{From: 0, Size: 100}
 	}).GroupBy("modify_date", aggs.TermsParam{}, func() aggs.TopHitsParam {
 		return aggs.TopHitsParam{Size: 43}
-	}).Sum("count", aggs.MetricParam{}).Stats("state", aggs.MetricParam{}).TopHitsFunc(func(b *elastic.Builder) *elastic.Builder {
-		return b.Size(100).Select("state,title").OrderBy("news_posttime", esearch.Desc)
+	}).Sum("count", aggs.MetricParam{}).Stats("state", aggs.MetricParam{}).TopHitsFunc(func(b *elastic.Builder) {
+		b.Size(100).Select("state,title").OrderBy("news_posttime", esearch.Desc)
 	}).WhereNested(func(b *elastic.Builder) {
 		b.OrWhere("fsaf", "fsadfsa").OrWhere("abc", "abc")
 	})

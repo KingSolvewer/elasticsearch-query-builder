@@ -188,8 +188,10 @@ func (b *Builder) TopHits(hits aggs.TopHitsParam) *Builder {
 	return b.Aggs(esearch.TopHits, hitsAggs)
 }
 
-func (b *Builder) TopHitsFunc(fn func(b *Builder) *Builder) *Builder {
-	hits := fn(NewBuilder()).topHits()
+func (b *Builder) TopHitsFunc(fn NestedFunc) *Builder {
+	newBuilder := NewBuilder()
+	fn(newBuilder)
+	hits := newBuilder.topHits()
 	return b.Aggs(esearch.TopHits, hits)
 }
 
