@@ -130,3 +130,9 @@ func (query Query) BoolBuild() string {
 type Aggregator interface {
 	Aggregate(args string) Aggregator
 }
+
+type Request interface {
+	Query() ([]byte, error)
+	ScrollQuery() ([]byte, error)
+	Decorate()
+}

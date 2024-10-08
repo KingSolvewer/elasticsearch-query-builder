@@ -19,6 +19,13 @@ type Builder struct {
 	minimumShouldMatch int
 	aggs               map[string]esearch.Aggregator
 	query              *esearch.ElasticQuery
+	scroll             string
+	scrollId           string
+	dsl                string
+	result             string
+	Request            esearch.Request
+	*Result
+	*Response
 }
 
 var builder = NewBuilder()
@@ -91,6 +98,32 @@ func (b *Builder) Clone() *Builder {
 		nested:             nested,
 		minimumShouldMatch: b.minimumShouldMatch,
 	}
+}
+
+func Scroll(scroll string) *Builder {
+	return builder.Scroll(scroll)
+}
+
+func (b *Builder) Scroll(scroll string) *Builder {
+	b.scroll = scroll
+	return b
+}
+
+func (b *Builder) GetScroll() string {
+	return b.scroll
+}
+
+func ScrollId(scrollId string) *Builder {
+	return builder.ScrollId(scrollId)
+}
+
+func (b *Builder) ScrollId(scrollId string) *Builder {
+	b.scrollId = scrollId
+	return b
+}
+
+func (b *Builder) GetScrollId() string {
+	return b.scrollId
 }
 
 func Select(fields ...string) *Builder {
@@ -815,5 +848,107 @@ func checkType(value any) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+type Response struct {
+	Took     int  `json:"took"`
+	TimedOut bool `json:"timed_out"`
+	Shards   struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Skipped    int `json:"skipped"`
+		Failed     int `json:"failed"`
+	} `json:"_shards"`
+	Hits struct {
+		Total    int     `json:"total"`
+		MaxScore float32 `json:"max_score"`
+		Hits     []struct {
+			Index  string         `json:"_index"`
+			Type   string         `json:"_type"`
+			Id     string         `json:"_id"`
+			Score  float32        `json:"_score"`
+			Source map[string]any `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
+type Result struct {
+	Total    int              `json:"total"`
+	List     []map[string]any `json:"list"`
+	Aggs     any              `json:"aggs,omitempty"`
+	ScrollId string           `json:"scroll_id,omitempty"`
+}
+
+func (b *Builder) Get() (*Result, error) {
+	data, err := b.runQuery()
+	if err != nil {
+		return nil, err
+	}
+
+	b.Response = &Response{}
+
+	err = json.Unmarshal(data, b.Response)
+	if err != nil {
+		return nil, err
+	}
+
+	b.Result = &Result{
+		Total: b.Response.Hits.Total,
+		List:  make([]map[string]any, 0),
+	}
+
+	b.Request.Decorate()
+
+	return b.Result, err
+}
+
+func (b *Builder) Paginator(page, size uint) (*Result, error) {
+	var from uint = 0
+	if page > 0 {
+		from = page - 1
+	}
+	b.size = size
+	b.from = from
+
+	data, err := b.runQuery()
+	if err != nil {
+		return nil, err
+	}
+
+	b.Response = &Response{}
+
+	err = json.Unmarshal(data, b.Response)
+	if err != nil {
+		return nil, err
+	}
+
+	b.Result = &Result{
+		Total: b.Response.Hits.Total,
+		List:  make([]map[string]any, 0),
+	}
+
+	b.Request.Decorate()
+
+	return b.Result, err
+}
+
+func (b *Builder) runQuery() (data []byte, err error) {
+	if b.Request == nil {
+		panic("请先实现elastic.Request接口")
+	}
+
+	if b.scroll == "" {
+		data, err = b.Request.Query()
+	} else {
+		data, err = b.Request.ScrollQuery()
+	}
+
+	return data, err
+}
+
+func (b *Builder) Decorate() {
+	for _, item := range b.Response.Hits.Hits {
+		b.Result.List = append(b.Result.List, item.Source)
 	}
 }
