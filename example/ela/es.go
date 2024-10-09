@@ -238,7 +238,7 @@ func (es *YingyanEs) Query() ([]byte, error) {
 		return nil, err
 	}
 
-	return es.request(jsonData, "http://10.111.7.178:1115/es/search/sharding/one")
+	return es.request(jsonData, "")
 }
 
 func (es *YingyanEs) ScrollQuery() ([]byte, error) {
@@ -247,7 +247,7 @@ func (es *YingyanEs) ScrollQuery() ([]byte, error) {
 		return nil, err
 	}
 
-	return es.request(jsonData, "http://10.111.7.178:1115/es/search/sharding/scroll/one")
+	return es.request(jsonData, "")
 }
 
 func (es *YingyanEs) getParams(scroll bool) ([]byte, error) {
