@@ -29,7 +29,7 @@ func (b *Builder) compile() {
 		b.query.From = esearch.Uint(b.from)
 	}
 
-	if b.collapse != nil {
+	if b.collapse.Field != "" {
 		b.query.Collapse = b.collapse
 	}
 

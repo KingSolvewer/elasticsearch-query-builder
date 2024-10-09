@@ -140,5 +140,9 @@ type Request interface {
 }
 
 type ExpandInnerHits interface {
-	String()
+	ExpandHits()
+}
+
+type AggResult interface {
+	UnmarshalJSON([]byte) error
 }

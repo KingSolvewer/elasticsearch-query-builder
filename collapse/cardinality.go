@@ -3,7 +3,11 @@ package collapse
 import "github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 
 type Collapse struct {
-	Field                      string `json:"field"`
+	Field string `json:"field"`
+	CollapsedParams
+}
+
+type CollapsedParams struct {
 	esearch.ExpandInnerHits    `json:"inner_hits,omitempty"`
 	MaxConcurrentGroupSearches int `json:"max_concurrent_group_searches,omitempty"`
 }
@@ -17,10 +21,10 @@ type InnerHits struct {
 
 type MultiInnerHits []InnerHits
 
-func (hit InnerHits) String() {
+func (hit InnerHits) ExpandHits() {
 
 }
 
-func (m MultiInnerHits) String() {
+func (m MultiInnerHits) ExpandHits() {
 
 }

@@ -17,7 +17,13 @@ func main() {
 	es := ela.NewYingyanEs()
 
 	//result, err := es.Select(ela.Title, ela.CategoryId, ela.PublishTime, ela.CreateTime).Where(ela.Stat, ela.StatWaitFilter).Size(1).Get()
-	result, err := es.Select(ela.Title, ela.CategoryId, ela.PublishTime, ela.CreateTime).Where(ela.Stat, ela.StatWaitFilter).Size(1).Cardinality(ela.NewsSimHash, nil).Collapse(ela.NewsSimHash).GroupBy(ela.NewsSimHash, aggs.TermsParam{}, nil).Get()
+	es.Select(ela.Title, ela.CategoryId, ela.PublishTime, ela.CreateTime)
+	es.Where(ela.Stat, ela.StatWaitFilter).Size(1).Cardinality(ela.NewsSimHash, nil)
+	es.Collapse(ela.NewsSimHash)
+	//es.GroupBy(ela.NewsSimHash, aggs.TermsParam{}, nil)
+	//result, err := es.Get()
+	//json.RawMessage{}
+	result, err := es.Paginator(1, 10)
 	fmt.Println(es.Dsl())
 	fmt.Println(result, err)
 	jsonData, err := json.Marshal(result)
@@ -70,8 +76,10 @@ func main() {
 	//	return b.OrWhere("title", "美国").OrWhere("title", "日本")
 	//})
 
-	elastic.Where("status", 1).Where("title", "中国").OrWhere("status", 1).WhereNot("country", "日本").Filter("city", "合肥")
-	elastic.OrderBy("status", esearch.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]esearch.OrderType{"_count": esearch.Asc}}, func() aggs.TopHitsParam {
+	builder := elastic.NewBuilder()
+
+	builder.Where("status", 1).Where("title", "中国").OrWhere("status", 1).WhereNot("country", "日本").Filter("city", "合肥")
+	builder.OrderBy("status", esearch.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]esearch.OrderType{"_count": esearch.Asc}}, func() aggs.TopHitsParam {
 		return aggs.TopHitsParam{From: 0, Size: 100}
 	}).GroupBy("modify_date", aggs.TermsParam{}, func() aggs.TopHitsParam {
 		return aggs.TopHitsParam{Size: 43}
@@ -89,12 +97,12 @@ func main() {
 	//elastic.Range("create_time", aggs.RangeParam{Format: "yyyy-MM-dd", Ranges: []aggs.Ranges{{To: 50}, {From: 50, To: 100}, {From: 100}}})
 	//elastic.TopHits(aggs.TopHits{From: 0, Size: 10, Sort: map[string]es.Order{"posttime": {Order: es.Asc}}})
 
-	dsl := elastic.Dsl()
+	dsl := builder.Dsl()
 
 	fmt.Println(dsl)
 
 	return
-	builder := elastic.NewBuilder().Select("status").Where("status", 1000).Where("title", "中国").OrWhere("status", 13).WhereNot("country", "日本").Filter("city", "合肥")
+	builder = elastic.NewBuilder().Select("status").Where("status", 1000).Where("title", "中国").OrWhere("status", 13).WhereNot("country", "日本").Filter("city", "合肥")
 	//elastic.OrderBy("status", es.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]es.OrderType{"_count": es.Asc}}, func() aggs.TopHitsParam {
 	//	return aggs.TopHitsParam{From: 0, Size: 100}
 	//}).GroupBy("modify_date", aggs.TermsParam{}, func() aggs.TopHitsParam {
