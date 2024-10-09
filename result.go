@@ -3,7 +3,6 @@ package elastic
 import (
 	"encoding/json"
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
-	"log"
 	"strings"
 )
 
@@ -144,7 +143,6 @@ func CreateAggResult(data map[string]json.RawMessage) (res map[string]esearch.Ag
 			lastString := key[lastIndex+1:]
 			switch lastString {
 			case esearch.Cardinality:
-				log.Println(string(item))
 				val := &CardinalityAggResult{}
 				err = json.Unmarshal(item, val)
 				if err == nil {
@@ -153,7 +151,6 @@ func CreateAggResult(data map[string]json.RawMessage) (res map[string]esearch.Ag
 			}
 		}
 	}
-	log.Println(res)
 	return res, err
 
 }

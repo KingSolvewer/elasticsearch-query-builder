@@ -24,10 +24,10 @@ func main() {
 	//result, err := es.Get()
 	//json.RawMessage{}
 	result, err := es.Paginator(1, 10)
-	fmt.Println(es.Dsl())
-	fmt.Println(result, err)
+	log.Println(es.Dsl())
+	log.Println(result, err)
 	jsonData, err := json.Marshal(result)
-	fmt.Println(string(jsonData), err)
+	log.Println(string(jsonData), err)
 	return
 	//dsl.SetSize(0)
 	//dsl.SetFrom(10)
