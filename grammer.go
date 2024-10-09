@@ -29,6 +29,10 @@ func (b *Builder) compile() {
 		b.query.From = esearch.Uint(b.from)
 	}
 
+	if b.collapse != nil {
+		b.query.Collapse = b.collapse
+	}
+
 	boolQuery := b.component()
 
 	if len(boolQuery.Should) > 0 {

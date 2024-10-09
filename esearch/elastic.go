@@ -66,6 +66,7 @@ const (
 	Stats         = "stats"
 	ExtendedStats = "extended_stats"
 	TopHits       = "top_hits"
+	Cardinality   = "cardinality"
 )
 
 type QueryBuilder interface {
@@ -93,12 +94,13 @@ func (i Uint) Page() uint {
 }
 
 type ElasticQuery struct {
-	Source []string  `json:"_source,omitempty"`
-	Size   Paginator `json:"size,omitempty"`
-	From   Paginator `json:"from,omitempty"`
-	Sort   []Sort    `json:"sort,omitempty"`
-	Query  `json:"query,omitempty"`
-	Aggs   map[string]Aggregator `json:"aggs,omitempty"`
+	Source   []string  `json:"_source,omitempty"`
+	Size     Paginator `json:"size,omitempty"`
+	From     Paginator `json:"from,omitempty"`
+	Sort     []Sort    `json:"sort,omitempty"`
+	Query    `json:"query,omitempty"`
+	Aggs     map[string]Aggregator `json:"aggs,omitempty"`
+	Collapse ExpandInnerHits       `json:"collapse,omitempty"`
 }
 
 type Query map[string]QueryBuilder
@@ -135,4 +137,8 @@ type Request interface {
 	Query() ([]byte, error)
 	ScrollQuery() ([]byte, error)
 	Decorate()
+}
+
+type ExpandInnerHits interface {
+	String()
 }

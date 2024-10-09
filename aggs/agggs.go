@@ -115,7 +115,7 @@ type CardinalityAggs struct {
 }
 
 type Cardinality struct {
-	Field string
+	Field string `json:"field"`
 	CardinalityParam
 }
 
@@ -124,11 +124,10 @@ type CardinalityParam struct {
 	PrecisionThreshold int `json:"precision_threshold,omitempty"`
 }
 
+type CardinalityFunc func() CardinalityParam
+
 func (p CardinalityParam) Aggregate(field string) esearch.Aggregator {
-	return Cardinality{
-		Field:            field,
-		CardinalityParam: p,
-	}
+	return p
 }
 
 type TopHitsAggs struct {

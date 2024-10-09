@@ -220,6 +220,24 @@ func (b *Builder) topHits() aggs.TopHits {
 	return topHits
 }
 
+func Cardinality(field string, fn aggs.CardinalityFunc) *Builder {
+	return builder.Cardinality(field, fn)
+}
+
+func (b *Builder) Cardinality(field string, fn aggs.CardinalityFunc) *Builder {
+	cardinality := aggs.CardinalityAggs{
+		Cardinality: aggs.Cardinality{
+			Field: field,
+		},
+	}
+	if fn != nil {
+		cardinality.Cardinality.CardinalityParam = fn()
+	}
+
+	b.Aggs(field+"_"+esearch.Cardinality, cardinality)
+	return b
+}
+
 func checkAggsRangeType(ranges []aggs.Ranges) bool {
 	for _, r := range ranges {
 		switch r.From.(type) {

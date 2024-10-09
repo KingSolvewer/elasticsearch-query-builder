@@ -2,9 +2,12 @@ package elastic
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/KingSolvewer/elasticsearch-query-builder/collapse"
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 	"github.com/KingSolvewer/elasticsearch-query-builder/fulltext"
 	"github.com/KingSolvewer/elasticsearch-query-builder/termlevel"
+	"log"
 )
 
 type NestedFunc func(b *Builder)
@@ -21,8 +24,7 @@ type Builder struct {
 	query              *esearch.ElasticQuery
 	scroll             string
 	scrollId           string
-	dsl                string
-	result             string
+	collapse           esearch.ExpandInnerHits
 	Request            esearch.Request
 	*Result
 	*Response
@@ -124,6 +126,17 @@ func (b *Builder) ScrollId(scrollId string) *Builder {
 
 func (b *Builder) GetScrollId() string {
 	return b.scrollId
+}
+
+func Collapse(field string) *Builder {
+	return builder.Collapse(field)
+}
+
+func (b *Builder) Collapse(field string) *Builder {
+	b.collapse = collapse.Collapse{
+		Field: field,
+	}
+	return b
 }
 
 func Select(fields ...string) *Builder {
@@ -860,17 +873,28 @@ type Response struct {
 		Skipped    int `json:"skipped"`
 		Failed     int `json:"failed"`
 	} `json:"_shards"`
-	Hits struct {
-		Total    int     `json:"total"`
-		MaxScore float32 `json:"max_score"`
-		Hits     []struct {
-			Index  string         `json:"_index"`
-			Type   string         `json:"_type"`
-			Id     string         `json:"_id"`
-			Score  float32        `json:"_score"`
-			Source map[string]any `json:"_source"`
-		} `json:"hits"`
+	Hits         `json:"hits"`
+	ScrollId     string         `json:"_scroll_id,omitempty"`
+	Aggregations map[string]any `json:"aggregations"`
+}
+
+type Hits struct {
+	Total    int     `json:"total"`
+	MaxScore float32 `json:"max_score"`
+	Hits     []struct {
+		Index     string               `json:"_index"`
+		Type      string               `json:"_type"`
+		Id        string               `json:"_id"`
+		Score     float32              `json:"_score"`
+		Source    map[string]any       `json:"_source"`
+		Fields    map[string][]string  `json:"fields,omitempty"`
+		InnerHits map[string]InnerHits `json:"inner_hits,omitempty"`
+		Sort      []any                `json:"sort,omitempty"`
 	} `json:"hits"`
+}
+
+type InnerHits struct {
+	Hits
 }
 
 type Result struct {
@@ -882,23 +906,12 @@ type Result struct {
 
 func (b *Builder) Get() (*Result, error) {
 	data, err := b.runQuery()
+	log.Println(string(data))
 	if err != nil {
 		return nil, err
 	}
 
-	b.Response = &Response{}
-
-	err = json.Unmarshal(data, b.Response)
-	if err != nil {
-		return nil, err
-	}
-
-	b.Result = &Result{
-		Total: b.Response.Hits.Total,
-		List:  make([]map[string]any, 0),
-	}
-
-	b.Request.Decorate()
+	err = b.resultData(data)
 
 	return b.Result, err
 }
@@ -916,11 +929,18 @@ func (b *Builder) Paginator(page, size uint) (*Result, error) {
 		return nil, err
 	}
 
+	err = b.resultData(data)
+
+	return b.Result, err
+}
+
+func (b *Builder) resultData(data []byte) error {
 	b.Response = &Response{}
 
-	err = json.Unmarshal(data, b.Response)
+	err := json.Unmarshal(data, b.Response)
+	fmt.Println("response结构体", b.Response)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	b.Result = &Result{
@@ -928,9 +948,16 @@ func (b *Builder) Paginator(page, size uint) (*Result, error) {
 		List:  make([]map[string]any, 0),
 	}
 
-	b.Request.Decorate()
+	if b.Response.ScrollId != "" {
+		b.Result.ScrollId = b.Response.ScrollId
+	}
 
-	return b.Result, err
+	if b.Response.Aggregations != nil {
+		b.Result.Aggs = b.Response.Aggregations
+	}
+
+	b.Request.Decorate()
+	return nil
 }
 
 func (b *Builder) runQuery() (data []byte, err error) {
