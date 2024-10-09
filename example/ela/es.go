@@ -212,28 +212,7 @@ func (es *YingyanEs) parseTime(typ string) (int64, error) {
 }
 
 func (es *YingyanEs) Query() ([]byte, error) {
-	byteSet, err := es.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
-	startStamp, err := es.parseTime("start")
-	if err != nil {
-		return nil, err
-	}
-	endStamp, err := es.parseTime("end")
-	if err != nil {
-		return nil, err
-	}
-
-	params := Params{
-		Index:      es.index,
-		Statement:  string(byteSet),
-		StartStamp: startStamp,
-		EndStamp:   endStamp,
-	}
-
-	jsonData, err := json.Marshal(params)
+	jsonData, err := es.getParams(true)
 	if err != nil {
 		return nil, err
 	}
