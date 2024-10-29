@@ -14,17 +14,34 @@ import (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 
+	type Result struct {
+		CategoryId  int64  `json:"category_id_"`
+		ClaimUserId string `json:"claim_user_id_"`
+	}
+
+	m := make(map[string]any)
+	var r Result
+	var rs []Result
+
 	es := ela.NewYingyanEs()
 
 	//result, err := es.Select(ela.Title, ela.CategoryId, ela.PublishTime, ela.CreateTime).Where(ela.Stat, ela.StatWaitFilter).Size(1).Get()
-	es.Select(ela.Title, ela.CategoryId, ela.PublishTime, ela.CreateTime)
-	es.Where(ela.Stat, ela.StatWaitFilter).Size(1).Cardinality(ela.NewsSimHash, nil)
+	es.Select(ela.Title, ela.CategoryId, ela.PublishTime, ela.CreateTime, ela.ClaimUserId)
+	es.Where(ela.Stat, ela.StatArchived).Size(10).Cardinality(ela.NewsSimHash, nil)
+	//es.SearchTime("2024-02-01 00:00:00", "2024-02-05 00:00:00")
+	es.WhereExists(ela.ClaimUserId)
 	es.Collapse(ela.NewsSimHash)
-	//es.GroupBy(ela.NewsSimHash, aggs.TermsParam{}, nil)
+	es.GroupBy(ela.NewsSimHash, aggs.TermsParam{}, nil)
 	//result, err := es.Get()
 	//json.RawMessage{}
-	result, err := es.Paginator(1, 10)
-	log.Println(es.Dsl())
+
+	log.Fatalln(es.Dsl())
+	result, err := es.Paginator(1, 10, m)
+	//result, err := es.Get(nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println(es.Dsl(), m, r, rs)
 	log.Println(result, err)
 	jsonData, err := json.Marshal(result)
 	log.Println(string(jsonData), err)

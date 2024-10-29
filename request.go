@@ -1,47 +1,52 @@
 package elastic
 
 import (
-	"encoding/json"
+	"errors"
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
+	"reflect"
 )
 
-func (b *Builder) Get() (*Result, error) {
+func (b *Builder) Get(dest any) (*Result, error) {
+	if err := checkDestType(dest); err != nil {
+		return nil, err
+	}
+
+	if dest == nil {
+		b.Size(0)
+	}
+
 	data, err := b.runQuery()
 	if err != nil {
 		return nil, err
 	}
+	b.byteData = data
 
-	b.Response = &Response{}
+	result := &Result{}
 
-	err = json.Unmarshal(data, b.Response)
-	if err != nil {
+	err = b.Parser(result, data, dest)
+
+	// 查询完毕之后，重置查询语句
+	b.Reset()
+
+	return result, err
+}
+
+func (b *Builder) Paginator(page, size uint, dest any) (*Result, error) {
+	if err := checkDestType(dest); err != nil {
 		return nil, err
 	}
 
-	b.Result = &Result{
-		Total: b.Response.Hits.Total,
-		List:  make([]map[string]any, 0),
-	}
-
-	if b.Response.ScrollId != "" {
-		b.Result.ScrollId = b.Response.ScrollId
-	}
-	if b.Response.Aggregations != nil {
-		b.Result.Aggs = b.Response.Aggregations
-	}
-
-	b.Request.Decorate()
-
-	return b.Result, err
-}
-
-func (b *Builder) Paginator(page, size uint) (*Result, error) {
 	var from uint = 0
 	if page > 0 {
 		from = page - 1
 	}
-	b.size = size
 	b.from = from
+
+	if dest == nil {
+		b.size = 0
+	} else {
+		b.size = size
+	}
 
 	if b.collapse.Field != "" {
 		b.Cardinality(b.collapse.Field, nil)
@@ -52,34 +57,19 @@ func (b *Builder) Paginator(page, size uint) (*Result, error) {
 		return nil, err
 	}
 
-	b.Response = &Response{}
+	b.byteData = data
 
-	err = json.Unmarshal(data, b.Response)
-	if err != nil {
-		return nil, err
+	result := &Result{
+		CurrentPage: esearch.Uint(page),
+		PerPage:     esearch.Uint(size),
 	}
 
-	b.Result = &Result{
-		Total:         b.Response.Hits.Total,
-		List:          make([]map[string]any, 0),
-		OriginalTotal: esearch.Uint(b.Response.Hits.Total),
-		PerPage:       esearch.Uint(size),
-		CurrentPage:   esearch.Uint(page),
-	}
+	err = b.Parser(result, data, dest)
+	result.LastPage = esearch.Uint(uint(result.Total)/size + 1)
 
-	if b.Response.Aggregations != nil {
-		b.Result.Aggs = b.Response.Aggregations
-	}
-
-	if b.collapse.Field != "" {
-		b.Result.Total = b.Result.Aggs[b.collapse.Field+"_"+esearch.Cardinality].(*CardinalityAggResult).Value
-	}
-
-	b.Result.LastPage = esearch.Uint(uint(b.Result.Total)/size + 1)
-
-	b.Request.Decorate()
-
-	return b.Result, err
+	// 查询完毕之后，重置查询语句
+	b.Reset()
+	return result, err
 }
 
 func (b *Builder) runQuery() (data []byte, err error) {
@@ -96,8 +86,18 @@ func (b *Builder) runQuery() (data []byte, err error) {
 	return data, err
 }
 
-func (b *Builder) Decorate() {
-	for _, item := range b.Response.Hits.Hits {
-		b.Result.List = append(b.Result.List, item.Source)
+func (b *Builder) GetRawData() []byte {
+	return b.byteData
+}
+
+func checkDestType(dest any) error {
+	switch dest.(type) {
+	case nil, map[string]any, *map[string]any, *[]map[string]any:
+	default:
+		reflectValue := reflect.ValueOf(dest)
+		if reflectValue.Kind() != reflect.Ptr {
+			return errors.New("expected Pointer dest")
+		}
 	}
+	return nil
 }

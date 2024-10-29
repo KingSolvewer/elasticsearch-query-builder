@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	DateTime = "2006-01-02 15:04:05"
-	DataSize = 10000
+	DateTime           = "2006-01-02 15:04:05"
+	DataSize           = 10000
+	EsGateWayUrl       = ""
+	EsScrollGateWayUrl = ""
 )
 
 const (
@@ -217,7 +219,7 @@ func (es *YingyanEs) Query() ([]byte, error) {
 		return nil, err
 	}
 
-	return es.request(jsonData, "")
+	return es.request(jsonData, EsGateWayUrl)
 }
 
 func (es *YingyanEs) ScrollQuery() ([]byte, error) {
@@ -226,7 +228,7 @@ func (es *YingyanEs) ScrollQuery() ([]byte, error) {
 		return nil, err
 	}
 
-	return es.request(jsonData, "")
+	return es.request(jsonData, EsScrollGateWayUrl)
 }
 
 func (es *YingyanEs) getParams(scroll bool) ([]byte, error) {
@@ -269,9 +271,7 @@ func (es *YingyanEs) request(jsonData []byte, url string) ([]byte, error) {
 	req.Header.Set("Authorization", "")
 	req.Header.Set("Expect", "")
 
-	client := &http.Client{
-		//Timeout: 10 * time.Second,
-	}
+	client := &http.Client{}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -281,22 +281,4 @@ func (es *YingyanEs) request(jsonData []byte, url string) ([]byte, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	return body, err
-}
-
-func (es *YingyanEs) Decorate() {
-	for i, item := range es.Response.Hits.Hits {
-		if v, ok := item.Source[ClaimUserId]; ok && v == nil {
-			es.Response.Hits.Hits[i].Source[ClaimUserId] = 0
-		}
-		if v, ok := item.Source[ApprovalUserId]; ok && v == nil {
-			es.Response.Hits.Hits[i].Source[ApprovalUserId] = 0
-		}
-		if v, ok := item.Source[ApprovalTime]; ok && v == nil {
-			es.Response.Hits.Hits[i].Source[ApprovalTime] = ""
-		}
-		if v, ok := item.Source[ClaimTime]; ok && v == nil {
-			es.Response.Hits.Hits[i].Source[ClaimTime] = ""
-		}
-	}
-	es.Builder.Decorate()
 }

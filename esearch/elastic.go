@@ -136,7 +136,6 @@ type Aggregator interface {
 type Request interface {
 	Query() ([]byte, error)
 	ScrollQuery() ([]byte, error)
-	Decorate()
 }
 
 type ExpandInnerHits interface {
@@ -144,5 +143,5 @@ type ExpandInnerHits interface {
 }
 
 type AggResult interface {
-	UnmarshalJSON([]byte) error
+	Result() any
 }
