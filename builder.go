@@ -22,7 +22,7 @@ type Builder struct {
 	query              *esearch.ElasticQuery
 	scroll             string
 	scrollId           string
-	collapse           collapse.Collapse
+	collapse           *collapse.Collapse
 	Request            esearch.Request
 	byteData           []byte
 }
@@ -75,7 +75,7 @@ func (b *Builder) Reset() *Builder {
 	b.query = nil
 	b.scroll = ""
 	b.scrollId = ""
-	b.collapse = collapse.Collapse{}
+	b.collapse = &collapse.Collapse{}
 
 	return b
 }
@@ -134,7 +134,7 @@ func Collapse(field string) *Builder {
 }
 
 func (b *Builder) Collapse(field string) *Builder {
-	b.collapse = collapse.Collapse{
+	b.collapse = &collapse.Collapse{
 		Field: field,
 	}
 	return b

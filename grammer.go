@@ -43,8 +43,8 @@ func (b *Builder) compile() {
 	b.query.Aggs = b.aggs
 }
 
-func (b *Builder) component() esearch.BoolQuery {
-	boolQuery := esearch.BoolQuery{}
+func (b *Builder) component() *esearch.BoolQuery {
+	boolQuery := &esearch.BoolQuery{}
 
 	for key, items := range b.where {
 		switch key {
