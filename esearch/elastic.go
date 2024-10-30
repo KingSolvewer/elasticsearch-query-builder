@@ -141,7 +141,3 @@ type Request interface {
 type ExpandInnerHits interface {
 	ExpandHits()
 }
-
-type AggResult interface {
-	Result() any
-}

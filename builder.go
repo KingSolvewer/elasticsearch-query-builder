@@ -213,6 +213,18 @@ func (b *Builder) Where(field string, value any) *Builder {
 	return b
 }
 
+// WherePrefix Must term 查询语句
+func WherePrefix(field string, value any) *Builder {
+	return builder.WherePrefix(field, value)
+}
+
+// WherePrefix Must term 查询语句
+func (b *Builder) WherePrefix(field string, value any) *Builder {
+	b.prefixQuery(esearch.Must, field, value)
+
+	return b
+}
+
 // WhereExists Must exists 查询语句
 func WhereExists(field string) *Builder {
 	return builder.WhereExists(field)
@@ -328,18 +340,30 @@ func WhereNot(field string, value string) *Builder {
 
 // WhereNot MustNot term 查询
 func (b *Builder) WhereNot(field string, value string) *Builder {
-	b.termQuery(esearch.MustNot, field, value)
+	b.prefixQuery(esearch.MustNot, field, value)
 
 	return b
 }
 
-// WhereNotExistsNot MustNot exists 查询语句
-func WhereNotExistsNot(field string) *Builder {
-	return builder.WhereNotExistsNot(field)
+// WhereNotPrefix MustNot term 查询
+func WhereNotPrefix(field string, value string) *Builder {
+	return builder.WhereNotPrefix(field, value)
 }
 
-// WhereNotExistsNot MustNot exists 查询语句
-func (b *Builder) WhereNotExistsNot(field string) *Builder {
+// WhereNotPrefix MustNot term 查询
+func (b *Builder) WhereNotPrefix(field string, value string) *Builder {
+	b.prefixQuery(esearch.MustNot, field, value)
+
+	return b
+}
+
+// WhereNotExists MustNot exists 查询语句
+func WhereNotExists(field string) *Builder {
+	return builder.WhereNotExists(field)
+}
+
+// WhereNotExists MustNot exists 查询语句
+func (b *Builder) WhereNotExists(field string) *Builder {
 	b.exists(esearch.MustNot, field)
 
 	return b
@@ -448,6 +472,18 @@ func OrWhere(field string, value any) *Builder {
 // OrWhere Should term 查询语句
 func (b *Builder) OrWhere(field string, value any) *Builder {
 	b.termQuery(esearch.Should, field, value)
+
+	return b
+}
+
+// OrWherePrefix Should term 查询语句
+func OrWherePrefix(field string, value any) *Builder {
+	return builder.OrWherePrefix(field, value)
+}
+
+// OrWherePrefix Should term 查询语句
+func (b *Builder) OrWherePrefix(field string, value any) *Builder {
+	b.prefixQuery(esearch.Should, field, value)
 
 	return b
 }
@@ -582,6 +618,18 @@ func (b *Builder) Filter(field string, value any) *Builder {
 	return b
 }
 
+// FilterPrefix Filter term 查询语句
+func FilterPrefix(field string, value any) *Builder {
+	return builder.FilterPrefix(field, value)
+}
+
+// FilterPrefix Filter term 查询语句
+func (b *Builder) FilterPrefix(field string, value any) *Builder {
+	b.prefixQuery(esearch.FilterClause, field, value)
+
+	return b
+}
+
 // FilterExists Filter exists 查询语句
 func FilterExists(field string) *Builder {
 	return builder.FilterExists(field)
@@ -697,13 +745,26 @@ func (b *Builder) termQuery(clauseTyp esearch.BoolClauseType, field string, valu
 		return
 	}
 
-	//if _, ok := value.(int);
-
 	term := termlevel.TermQuery{
 		Term: make(map[string]any),
 	}
 
 	term.Term[field] = value
+
+	b.append(clauseTyp, term)
+}
+
+func (b *Builder) prefixQuery(clauseTyp esearch.BoolClauseType, field string, value any) {
+	ok := checkType(value)
+	if !ok {
+		return
+	}
+
+	term := termlevel.TermQuery{
+		Prefix: make(map[string]any),
+	}
+
+	term.Prefix[field] = value
 
 	b.append(clauseTyp, term)
 }
@@ -803,24 +864,24 @@ func (b *Builder) rangeQuery(clauseTyp esearch.BoolClauseType, field string, ran
 }
 
 func (b *Builder) whereMatch(clauseTyp esearch.BoolClauseType, field string, value string, matchType esearch.MatchType, fn func() fulltext.AppendParams) {
-	textQuery := fulltext.TextQuery{
-		Match:       make(map[string]fulltext.MatchQuery),
-		MatchPhrase: make(map[string]fulltext.MatchQuery),
-	}
+	textQuery := fulltext.TextQuery{}
+	match := make(map[string]fulltext.MatchQuery)
 
 	matchQuery := fulltext.MatchQuery{Query: value}
 	if fn != nil {
 		matchQuery.AppendParams = fn()
 	}
+	match[field] = matchQuery
 
 	switch matchType {
 	case esearch.Match:
-		textQuery.Match[field] = matchQuery
+		textQuery.Match = match
 	case esearch.MatchPhrase:
-		textQuery.MatchPhrase[field] = matchQuery
+		textQuery.MatchPhrase = match
 	case esearch.MatchPhrasePrefix:
+		textQuery.MatchPhrasePrefix = match
 	default:
-		textQuery.Match[field] = matchQuery
+		textQuery.Match = match
 	}
 
 	b.append(clauseTyp, textQuery)

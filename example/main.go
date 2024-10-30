@@ -11,6 +11,10 @@ import (
 	"main/ela"
 )
 
+type Dsl struct {
+	Term string
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 
@@ -32,6 +36,10 @@ func main() {
 	es.WhereExists(ela.ClaimUserId)
 	es.Collapse(ela.NewsSimHash)
 	es.GroupBy(ela.NewsSimHash, aggs.TermsParam{}, nil)
+	es.TopHits(aggs.TopHitsParam{})
+	es.TopHitsFunc(func(b *elastic.Builder) {
+		b.From(0).Size(10).OrderBy(ela.NewsSimHash, esearch.Desc)
+	})
 	//result, err := es.Get()
 	//json.RawMessage{}
 

@@ -5,9 +5,10 @@ type MultiMatcher interface {
 }
 
 type TextQuery struct {
-	Match       map[string]MatchQuery `json:"match,omitempty"`
-	MatchPhrase map[string]MatchQuery `json:"match_phrase,omitempty"`
-	MultiMatch  *MultiMatchQuery      `json:"multi_match,omitempty"`
+	Match             map[string]MatchQuery `json:"match,omitempty"`
+	MatchPhrase       map[string]MatchQuery `json:"match_phrase,omitempty"`
+	MatchPhrasePrefix map[string]MatchQuery `json:"match_phrase_fix,omitempty"`
+	MultiMatch        *MultiMatchQuery      `json:"multi_match,omitempty"`
 }
 
 type MatchQuery struct {

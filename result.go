@@ -17,8 +17,8 @@ type Response struct {
 	TimedOut     bool `json:"timed_out"`
 	Shards       `json:"_shards"`
 	Hits         `json:"hits"`
-	ScrollId     string                       `json:"_scroll_id,omitempty"`
-	Aggregations map[string]esearch.AggResult `json:"aggregations"`
+	ScrollId     string         `json:"_scroll_id,omitempty"`
+	Aggregations map[string]any `json:"aggregations"`
 	Dest         any
 }
 
