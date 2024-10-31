@@ -38,7 +38,7 @@ func main() {
 		b.GroupBy(ela.Stat, aggs.TermsParam{}, func(b *elastic.Builder) {
 			b.Histogram(ela.CreateTime, aggs.HistogramParam{})
 		}, func(b *elastic.Builder) {
-
+			b.From(1).Size(10).OrderBy("_count", esearch.Desc)
 		})
 	}, func(b *elastic.Builder) {
 		b.GroupBy(ela.CategoryId, aggs.TermsParam{})
