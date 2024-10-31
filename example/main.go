@@ -6,7 +6,6 @@ import (
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
 	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
-	"github.com/KingSolvewer/elasticsearch-query-builder/fulltext"
 	"log"
 	"main/ela"
 )
@@ -31,15 +30,25 @@ func main() {
 
 	//result, err := es.Select(ela.Title, ela.CategoryId, ela.PublishTime, ela.CreateTime).Where(ela.Stat, ela.StatWaitFilter).Size(1).Get()
 	es.Select(ela.Title, ela.CategoryId, ela.PublishTime, ela.CreateTime, ela.ClaimUserId)
-	es.Where(ela.Stat, ela.StatArchived).Size(10).Cardinality(ela.NewsSimHash, nil)
+	es.Where(ela.Stat, ela.StatArchived).Size(10)
 	//es.SearchTime("2024-02-01 00:00:00", "2024-02-05 00:00:00")
 	es.WhereExists(ela.ClaimUserId)
 	es.Collapse(ela.NewsSimHash)
-	es.GroupBy(ela.NewsSimHash, aggs.TermsParam{}, nil)
-	es.TopHits(aggs.TopHitsParam{})
-	es.TopHitsFunc(func(b *elastic.Builder) {
-		b.From(0).Size(10).OrderBy(ela.NewsSimHash, esearch.Desc)
+	es.GroupBy(ela.NewsSimHash, aggs.TermsParam{Size: 10, Order: esearch.SortMap{"_key": esearch.Asc}}, func(b *elastic.Builder) {
+		b.GroupBy(ela.Stat, aggs.TermsParam{}, func(b *elastic.Builder) {
+			b.Histogram(ela.CreateTime, aggs.HistogramParam{})
+		}, func(b *elastic.Builder) {
+
+		})
+	}, func(b *elastic.Builder) {
+		b.GroupBy(ela.CategoryId, aggs.TermsParam{})
+	}, func(b *elastic.Builder) {
+		b.TopHits(aggs.TopHitsParam{From: 1, Size: 10})
 	})
+	//es.TopHits(aggs.TopHitsParam{})
+	//es.TopHitsFunc(func(b *elastic.Builder) {
+	//	b.From(0).Size(10).OrderBy(ela.NewsSimHash, esearch.Desc)
+	//})
 	//result, err := es.Get()
 	//json.RawMessage{}
 
@@ -102,22 +111,22 @@ func main() {
 	//})
 
 	builder := elastic.NewBuilder()
-
-	builder.Where("status", 1).Where("title", "中国").OrWhere("status", 1).WhereNot("country", "日本").Filter("city", "合肥")
-	builder.OrderBy("status", esearch.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]esearch.OrderType{"_count": esearch.Asc}}, func() aggs.TopHitsParam {
-		return aggs.TopHitsParam{From: 0, Size: 100}
-	}).GroupBy("modify_date", aggs.TermsParam{}, func() aggs.TopHitsParam {
-		return aggs.TopHitsParam{Size: 43}
-	}).Sum("count", aggs.MetricParam{}).Stats("state", aggs.MetricParam{}).TopHitsFunc(func(b *elastic.Builder) {
-		b.Size(100).Select("state,title").OrderBy("news_posttime", esearch.Desc)
-	}).WhereNested(func(b *elastic.Builder) {
-		b.OrWhere("fsaf", "fsadfsa").OrWhere("abc", "abc")
-	}).WhereMultiMatch([]string{"fsadf", "fsaf"}, "fsadfas", esearch.Phrase, func() fulltext.AppendParams {
-		return fulltext.AppendParams{
-			Operator:           "and",
-			MinimumShouldMatch: "100%",
-		}
-	})
+	//
+	//builder.Where("status", 1).Where("title", "中国").OrWhere("status", 1).WhereNot("country", "日本").Filter("city", "合肥")
+	//builder.OrderBy("status", esearch.Asc).GroupBy("status", aggs.TermsParam{Size: 20, Order: map[string]esearch.OrderType{"_count": esearch.Asc}}, func() aggs.TopHitsParam {
+	//	return aggs.TopHitsParam{From: 0, Size: 100}
+	//}).GroupBy("modify_date", aggs.TermsParam{}, func() aggs.TopHitsParam {
+	//	return aggs.TopHitsParam{Size: 43}
+	//}).Sum("count", aggs.MetricParam{}).Stats("state", aggs.MetricParam{}).TopHitsFunc(func(b *elastic.Builder) {
+	//	b.Size(100).Select("state,title").OrderBy("news_posttime", esearch.Desc)
+	//}).WhereNested(func(b *elastic.Builder) {
+	//	b.OrWhere("fsaf", "fsadfsa").OrWhere("abc", "abc")
+	//}).WhereMultiMatch([]string{"fsadf", "fsaf"}, "fsadfas", esearch.Phrase, func() fulltext.AppendParams {
+	//	return fulltext.AppendParams{
+	//		Operator:           "and",
+	//		MinimumShouldMatch: "100%",
+	//	}
+	//})
 	//elastic.DateGroupBy("posttime", aggs.HistogramParam{Interval: "1day", Format: "yyyy-MM-dd"})
 	//elastic.Range("create_time", aggs.RangeParam{Format: "yyyy-MM-dd", Ranges: []aggs.Ranges{{To: 50}, {From: 50, To: 100}, {From: 100}}})
 	//elastic.TopHits(aggs.TopHits{From: 0, Size: 10, Sort: map[string]es.Order{"posttime": {Order: es.Asc}}})

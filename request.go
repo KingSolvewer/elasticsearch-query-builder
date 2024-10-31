@@ -48,9 +48,9 @@ func (b *Builder) Paginator(page, size uint, dest any) (*Result, error) {
 		b.size = size
 	}
 
-	if b.collapse.Field != "" {
-		b.Cardinality(b.collapse.Field, nil)
-	}
+	//if b.collapse.Field != "" {
+	//	b.Cardinality(b.collapse.Field, nil)
+	//}
 
 	data, err := b.runQuery()
 	if err != nil {

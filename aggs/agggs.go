@@ -8,7 +8,7 @@ type TopHitsFunc func() TopHitsParam
 
 type TermsAggs struct {
 	Terms `json:"terms"`
-	Aggs  map[string]TopHitsAggs `json:"aggs,omitempty"`
+	Aggs  map[string]esearch.Aggregator `json:"aggs,omitempty"`
 }
 
 type Terms struct {
@@ -17,17 +17,17 @@ type Terms struct {
 }
 
 type TermsParam struct {
-	Size  int                          `json:"size,omitempty"`
-	Order map[string]esearch.OrderType `json:"order,omitempty"`
+	Size  int             `json:"size,omitempty"`
+	Order esearch.SortMap `json:"order,omitempty"`
 }
 
-func (t TermsAggs) Aggregate(field string) esearch.Aggregator {
-	return t
+func (agg *TermsAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+	agg.Aggs = subAgg
 }
 
 type HistogramAggs struct {
 	Histogram `json:"histogram"`
-	Aggs      map[string]TopHitsAggs `json:"aggs,omitempty"`
+	Aggs      map[string]esearch.Aggregator `json:"aggs,omitempty"`
 }
 
 type Histogram struct {
@@ -38,19 +38,28 @@ type Histogram struct {
 type HistogramParam struct {
 	Interval       any                          `json:"interval"`
 	MinDocCount    int                          `json:"min_doc_count,omitempty"`
-	ExtendedBounds map[string]int               `json:"extended_bounds,omitempty"`
+	ExtendedBounds map[string]any               `json:"extended_bounds,omitempty"`
 	Order          map[string]esearch.OrderType `json:"order,omitempty"`
-	Offset         int                          `json:"offset,omitempty"`
+	Offset         any                          `json:"offset,omitempty"`
 	Format         string                       `json:"format,omitempty"`
 }
 
-func (h HistogramAggs) Aggregate(field string) esearch.Aggregator {
-	return h
+func (agg *HistogramAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+	agg.Aggs = subAgg
+}
+
+type DateHistogramAggs struct {
+	Histogram `json:"date_histogram"`
+	Aggs      map[string]esearch.Aggregator `json:"aggs,omitempty"`
+}
+
+func (agg *DateHistogramAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+	agg.Aggs = subAgg
 }
 
 type RangeAggs struct {
 	Range `json:"range"`
-	Aggs  map[string]TopHitsAggs `json:"aggs,omitempty"`
+	Aggs  map[string]esearch.Aggregator `json:"aggs,omitempty"`
 }
 
 type Range struct {
@@ -70,8 +79,17 @@ type Ranges struct {
 	Key  string `json:"key,omitempty"`
 }
 
-func (r RangeAggs) Aggregate(field string) esearch.Aggregator {
-	return r
+func (agg *RangeAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+	agg.Aggs = subAgg
+}
+
+type DateRangeAggs struct {
+	Range `json:"date_range"`
+	Aggs  map[string]esearch.Aggregator `json:"aggs,omitempty"`
+}
+
+func (agg *DateRangeAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+	agg.Aggs = subAgg
 }
 
 type AvgAggs struct {
@@ -87,27 +105,49 @@ type MetricParam struct {
 	Missing int `json:"missing,omitempty"`
 }
 
-func (a MetricParam) Aggregate(field string) esearch.Aggregator {
-	return Metric{
-		Field:       field,
-		MetricParam: a,
-	}
+func (metric *AvgAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
 }
 
 type MaxAggs struct {
 	Metric `json:"max"`
 }
+
+func (metric *MaxAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+}
+
 type MinAggs struct {
 	Metric `json:"min"`
 }
+
+func (metric *MinAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+}
+
 type SumAggs struct {
 	Metric `json:"sum"`
 }
+
+func (metric *SumAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+}
+
 type StatsAggs struct {
 	Metric `json:"stats"`
 }
+
+func (metric *StatsAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+}
+
 type ExtendedStatsAggs struct {
 	Metric `json:"extended_stats"`
+}
+
+func (metric *ExtendedStatsAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+}
+
+type ValueCount struct {
+	Metric `json:"value_count"`
+}
+
+func (metric *ValueCount) Aggregate(subAgg map[string]esearch.Aggregator) {
 }
 
 type CardinalityAggs struct {
@@ -126,33 +166,31 @@ type CardinalityParam struct {
 
 type CardinalityFunc func() CardinalityParam
 
-func (p CardinalityParam) Aggregate(field string) esearch.Aggregator {
-	return p
+func (metric *CardinalityAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
 }
 
 type TopHitsAggs struct {
 	TopHits `json:"top_hits"`
 }
 
+func (metric *TopHitsAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+}
+
 type TopHits struct {
 	From   esearch.Paginator `json:"from,omitempty"`
 	Size   esearch.Paginator `json:"size,omitempty"`
-	Sort   []esearch.Sort    `json:"sort,omitempty"`
+	Sort   []esearch.Sorter  `json:"sort,omitempty"`
 	Source []string          `json:"_source,omitempty"`
 }
 
 type TopHitsParam struct {
-	From   uint                         `json:"from,omitempty"`
-	Size   uint                         `json:"size,omitempty"`
-	Sort   map[string]esearch.OrderType `json:"sort,omitempty"`
-	Source []string                     `json:"_source,omitempty"`
+	From   uint            `json:"from,omitempty"`
+	Size   uint            `json:"size,omitempty"`
+	Sort   esearch.SortMap `json:"sort,omitempty"`
+	Source []string        `json:"_source,omitempty"`
 }
 
-func (t TopHits) Aggregate(field string) esearch.Aggregator {
-	return t
-}
-
-func (p TopHitsParam) TopHits() TopHits {
+func (p TopHitsParam) TopHitsAgg() *TopHitsAggs {
 	var (
 		size esearch.Uint
 		from esearch.Uint
@@ -167,7 +205,7 @@ func (p TopHitsParam) TopHits() TopHits {
 		from = esearch.Uint(p.From)
 	}
 
-	sorts := make([]esearch.Sort, 0)
+	sorts := make([]esearch.Sorter, 0)
 	if p.Sort != nil {
 		for field, order := range p.Sort {
 			sort := make(esearch.Sort)
@@ -179,12 +217,14 @@ func (p TopHitsParam) TopHits() TopHits {
 		}
 	}
 
-	topHits := TopHits{
-		From:   from,
-		Size:   size,
-		Sort:   sorts,
-		Source: p.Source,
+	topHitsAgg := &TopHitsAggs{
+		TopHits: TopHits{
+			From:   from,
+			Size:   size,
+			Sort:   sorts,
+			Source: p.Source,
+		},
 	}
 
-	return topHits
+	return topHitsAgg
 }

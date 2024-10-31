@@ -14,11 +14,11 @@ type Builder struct {
 	fields             []string
 	size               uint
 	from               uint
-	sort               []esearch.Sort
+	sort               []esearch.Sorter
 	where              map[esearch.BoolClauseType][]esearch.BoolBuilder
 	nested             map[esearch.BoolClauseType][]NestedFunc
 	minimumShouldMatch int
-	aggs               map[string]esearch.Aggregator
+	aggregations       map[string]Aggregation
 	query              *esearch.ElasticQuery
 	scroll             string
 	scrollId           string
@@ -31,11 +31,11 @@ var builder = NewBuilder()
 
 func NewBuilder() *Builder {
 	return &Builder{
-		fields: make([]string, 0),
-		sort:   make([]esearch.Sort, 0),
-		where:  make(map[esearch.BoolClauseType][]esearch.BoolBuilder),
-		nested: make(map[esearch.BoolClauseType][]NestedFunc),
-		aggs:   make(map[string]esearch.Aggregator),
+		fields:       make([]string, 0),
+		sort:         make([]esearch.Sorter, 0),
+		where:        make(map[esearch.BoolClauseType][]esearch.BoolBuilder),
+		nested:       make(map[esearch.BoolClauseType][]NestedFunc),
+		aggregations: make(map[string]Aggregation),
 	}
 }
 
@@ -67,11 +67,11 @@ func (b *Builder) Reset() *Builder {
 	b.fields = make([]string, 0)
 	b.size = 0
 	b.from = 0
-	b.sort = make([]esearch.Sort, 0)
+	b.sort = make([]esearch.Sorter, 0)
 	b.where = make(map[esearch.BoolClauseType][]esearch.BoolBuilder)
 	b.nested = make(map[esearch.BoolClauseType][]NestedFunc)
 	b.minimumShouldMatch = 0
-	b.aggs = make(map[string]esearch.Aggregator)
+	b.aggregations = make(map[string]Aggregation)
 	b.query = nil
 	b.scroll = ""
 	b.scrollId = ""
@@ -187,7 +187,7 @@ func OrderBy(field string, order esearch.OrderType) *Builder {
 
 func (b *Builder) OrderBy(field string, orderType esearch.OrderType) *Builder {
 
-	sort := make(map[string]esearch.Order)
+	sort := make(esearch.Sort)
 
 	switch orderType {
 	case esearch.Asc, esearch.Desc:
@@ -196,6 +196,26 @@ func (b *Builder) OrderBy(field string, orderType esearch.OrderType) *Builder {
 		sort[field] = esearch.Order{Order: esearch.Asc}
 	}
 
+	b.sort = append(b.sort, sort)
+
+	return b
+}
+
+func Order(sort esearch.Sort) *Builder {
+	return builder.Order(sort)
+}
+
+func (b *Builder) Order(sort esearch.Sort) *Builder {
+	b.sort = append(b.sort, sort)
+
+	return b
+}
+
+func OrderMap(sort esearch.SortMap) *Builder {
+	return builder.OrderMap(sort)
+}
+
+func (b *Builder) OrderMap(sort esearch.SortMap) *Builder {
 	b.sort = append(b.sort, sort)
 
 	return b

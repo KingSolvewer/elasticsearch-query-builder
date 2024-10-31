@@ -5,72 +5,86 @@ import (
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 )
 
-func (b *Builder) GroupBy(field string, param aggs.TermsParam, hitsFunc aggs.TopHitsFunc) *Builder {
-	terms := aggs.TermsAggs{
+type SubAggFunc func(b *Builder)
+
+type Aggregation struct {
+	Params  esearch.Aggregator
+	SubAggs []SubAggFunc
+}
+
+func (b *Builder) GroupBy(field string, param aggs.TermsParam, subAggFuncSet ...SubAggFunc) *Builder {
+	termsAgg := &aggs.TermsAggs{
 		Terms: aggs.Terms{
 			Field:      field,
 			TermsParam: param,
 		},
-		Aggs: make(map[string]aggs.TopHitsAggs),
 	}
 
-	if hitsFunc != nil {
-		terms.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
-	}
-
-	return b.Aggs(field+"_"+esearch.Terms, terms)
+	return b.Aggs(field+"_"+esearch.Terms, termsAgg, subAggFuncSet...)
 }
 
-func (b *Builder) Histogram(field string, param aggs.HistogramParam, hitsFunc aggs.TopHitsFunc) *Builder {
-	histogram := aggs.HistogramAggs{
+func (b *Builder) Histogram(field string, param aggs.HistogramParam, subAggFuncSet ...SubAggFunc) *Builder {
+	histogram := &aggs.HistogramAggs{
 		Histogram: aggs.Histogram{
 			Field:          field,
 			HistogramParam: param,
 		},
-		Aggs: make(map[string]aggs.TopHitsAggs),
 	}
 
-	if hitsFunc != nil {
-		histogram.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
+	return b.Aggs(field+"_"+esearch.Histogram, histogram, subAggFuncSet...)
+}
+
+func (b *Builder) DateGroupBy(field string, param aggs.HistogramParam, subAggFuncSet ...SubAggFunc) *Builder {
+	histogram := &aggs.DateHistogramAggs{
+		Histogram: aggs.Histogram{
+			Field:          field,
+			HistogramParam: param,
+		},
 	}
 
-	return b.Aggs(field+"_"+esearch.Histogram, histogram)
+	return b.Aggs(field+"_"+esearch.DateHistogram, histogram, subAggFuncSet...)
 }
 
-func (b *Builder) DateGroupBy(field string, param aggs.HistogramParam, hitsFunc aggs.TopHitsFunc) *Builder {
-	return b.Histogram(field, param, hitsFunc)
-}
-
-func (b *Builder) Range(field string, param aggs.RangeParam, hitsFunc aggs.TopHitsFunc) *Builder {
+func (b *Builder) Range(field string, param aggs.RangeParam, subAggFuncSet ...SubAggFunc) *Builder {
 	if !checkAggsRangeType(param.Ranges) {
 		return b
 	}
 
-	rangeAggs := aggs.RangeAggs{
+	rangeAggs := &aggs.RangeAggs{
 		Range: aggs.Range{
 			Field: field,
 		},
-		Aggs: make(map[string]aggs.TopHitsAggs),
 	}
 
-	if hitsFunc != nil {
-		rangeAggs.Aggs[field] = aggs.TopHitsAggs{TopHits: hitsFunc().TopHits()}
+	return b.Aggs(field+"_"+esearch.Range, rangeAggs, subAggFuncSet...)
+}
+
+func (b *Builder) DateRange(field string, param aggs.RangeParam, subAggFuncSet ...SubAggFunc) *Builder {
+	if !checkAggsRangeType(param.Ranges) {
+		return b
 	}
 
-	return b.Aggs(field+"_"+esearch.Range, rangeAggs)
+	rangeAggs := &aggs.DateRangeAggs{
+		Range: aggs.Range{
+			Field: field,
+		},
+	}
+
+	return b.Aggs(field+"_"+esearch.DateRange, rangeAggs, subAggFuncSet...)
 }
 
-func (b *Builder) DateRange(field string, param aggs.RangeParam, hitsFunc aggs.TopHitsFunc) *Builder {
-	return b.Range(field, param, hitsFunc)
-}
+func (b *Builder) Aggs(aggField string, aggregator esearch.Aggregator, subAggFuncSet ...SubAggFunc) *Builder {
+	agg := Aggregation{
+		Params:  aggregator,
+		SubAggs: subAggFuncSet,
+	}
 
-func (b *Builder) Aggs(aggsField string, aggregator esearch.Aggregator) *Builder {
-	b.aggs[aggsField] = aggregator
+	b.aggregations[aggField] = agg
 	return b
 }
 
 func (b *Builder) Avg(field string, param aggs.MetricParam) *Builder {
-	avgAggs := aggs.AvgAggs{
+	avgAggs := &aggs.AvgAggs{
 		Metric: aggs.Metric{
 			Field:       field,
 			MetricParam: param,
@@ -80,7 +94,7 @@ func (b *Builder) Avg(field string, param aggs.MetricParam) *Builder {
 }
 
 func (b *Builder) Max(field string, param aggs.MetricParam) *Builder {
-	maxAggs := aggs.MaxAggs{
+	maxAggs := &aggs.MaxAggs{
 		Metric: aggs.Metric{
 			Field:       field,
 			MetricParam: param,
@@ -91,7 +105,7 @@ func (b *Builder) Max(field string, param aggs.MetricParam) *Builder {
 }
 
 func (b *Builder) Min(field string, param aggs.MetricParam) *Builder {
-	minAggs := aggs.MinAggs{
+	minAggs := &aggs.MinAggs{
 		Metric: aggs.Metric{
 			Field:       field,
 			MetricParam: param,
@@ -101,7 +115,7 @@ func (b *Builder) Min(field string, param aggs.MetricParam) *Builder {
 }
 
 func (b *Builder) Sum(field string, param aggs.MetricParam) *Builder {
-	sumAggs := aggs.SumAggs{
+	sumAggs := &aggs.SumAggs{
 		Metric: aggs.Metric{
 			Field:       field,
 			MetricParam: param,
@@ -111,7 +125,7 @@ func (b *Builder) Sum(field string, param aggs.MetricParam) *Builder {
 }
 
 func (b *Builder) Stats(field string, param aggs.MetricParam) *Builder {
-	statsAggs := aggs.StatsAggs{
+	statsAggs := &aggs.StatsAggs{
 		Metric: aggs.Metric{
 			Field:       field,
 			MetricParam: param,
@@ -121,7 +135,7 @@ func (b *Builder) Stats(field string, param aggs.MetricParam) *Builder {
 }
 
 func (b *Builder) ExtendedStats(field string, param aggs.MetricParam) *Builder {
-	statsAggs := aggs.ExtendedStatsAggs{
+	statsAggs := &aggs.ExtendedStatsAggs{
 		Metric: aggs.Metric{
 			Field:       field,
 			MetricParam: param,
@@ -130,8 +144,30 @@ func (b *Builder) ExtendedStats(field string, param aggs.MetricParam) *Builder {
 	return b.Aggs(field+"_"+esearch.ExtendedStats, statsAggs)
 }
 
+func (b *Builder) ValueCount(field string) *Builder {
+	statsAggs := &aggs.ValueCount{
+		Metric: aggs.Metric{
+			Field: field,
+		},
+	}
+	return b.Aggs(field+"_"+esearch.ValueCount, statsAggs)
+}
+
+func (b *Builder) Cardinality(field string, fn aggs.CardinalityFunc) *Builder {
+	cardinality := &aggs.CardinalityAggs{
+		Cardinality: aggs.Cardinality{
+			Field: field,
+		},
+	}
+	if fn != nil {
+		cardinality.Cardinality.CardinalityParam = fn()
+	}
+
+	return b.Aggs(field+"_"+esearch.Cardinality, cardinality)
+}
+
 func (b *Builder) TopHits(hits aggs.TopHitsParam) *Builder {
-	hitsAggs := hits.TopHits()
+	hitsAggs := hits.TopHitsAgg()
 
 	return b.Aggs(esearch.TopHits, hitsAggs)
 }
@@ -139,11 +175,11 @@ func (b *Builder) TopHits(hits aggs.TopHitsParam) *Builder {
 func (b *Builder) TopHitsFunc(fn NestedFunc) *Builder {
 	newBuilder := NewBuilder()
 	fn(newBuilder)
-	hits := newBuilder.topHits()
+	hits := newBuilder.topHitsAgg()
 	return b.Aggs(esearch.TopHits, hits)
 }
 
-func (b *Builder) topHits() aggs.TopHits {
+func (b *Builder) topHitsAgg() *aggs.TopHitsAggs {
 	var (
 		size esearch.Uint
 		from esearch.Uint
@@ -158,28 +194,16 @@ func (b *Builder) topHits() aggs.TopHits {
 		from = esearch.Uint(b.from)
 	}
 
-	topHits := aggs.TopHits{
-		From:   from,
-		Size:   size,
-		Sort:   b.sort,
-		Source: b.fields,
-	}
-
-	return topHits
-}
-
-func (b *Builder) Cardinality(field string, fn aggs.CardinalityFunc) *Builder {
-	cardinality := aggs.CardinalityAggs{
-		Cardinality: aggs.Cardinality{
-			Field: field,
+	topHitsAgg := &aggs.TopHitsAggs{
+		TopHits: aggs.TopHits{
+			From:   from,
+			Size:   size,
+			Sort:   b.sort,
+			Source: b.fields,
 		},
 	}
-	if fn != nil {
-		cardinality.Cardinality.CardinalityParam = fn()
-	}
 
-	b.Aggs(field+"_"+esearch.Cardinality, cardinality)
-	return b
+	return topHitsAgg
 }
 
 func checkAggsRangeType(ranges []aggs.Ranges) bool {

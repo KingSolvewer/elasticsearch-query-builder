@@ -57,12 +57,13 @@ const (
 	Terms         = "terms"
 	Histogram     = "histogram"
 	Range         = "range"
+	DateRange     = "date_range"
 	DateHistogram = "date_histogram"
 	Avg           = "avg"
 	Max           = "max"
 	Min           = "min"
 	Sum           = "sum"
-	Count         = "count"
+	ValueCount    = "value_count"
 	Stats         = "stats"
 	ExtendedStats = "extended_stats"
 	TopHits       = "top_hits"
@@ -81,6 +82,21 @@ type Sort map[string]Order
 
 type Order struct {
 	Order OrderType `json:"order"`
+	Mode  string    `json:"mode"`
+}
+
+type SortMap map[string]OrderType
+
+type Sorter interface {
+	Sort()
+}
+
+func (s Sort) Sort() {
+
+}
+
+func (s SortMap) Sort() {
+
 }
 
 type Paginator interface {
@@ -97,7 +113,7 @@ type ElasticQuery struct {
 	Source   []string  `json:"_source,omitempty"`
 	Size     Paginator `json:"size,omitempty"`
 	From     Paginator `json:"from,omitempty"`
-	Sort     []Sort    `json:"sort,omitempty"`
+	Sort     []Sorter  `json:"sort,omitempty"`
 	Query    `json:"query,omitempty"`
 	Aggs     map[string]Aggregator `json:"aggs,omitempty"`
 	Collapse ExpandInnerHits       `json:"collapse,omitempty"`
@@ -130,7 +146,7 @@ func (query Query) BoolBuild() string {
 }
 
 type Aggregator interface {
-	Aggregate(args string) Aggregator
+	Aggregate(subAgg map[string]Aggregator)
 }
 
 type Request interface {

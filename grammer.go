@@ -1,14 +1,16 @@
 package elastic
 
 import (
+	"encoding/json"
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
+	"log"
 )
 
 func (b *Builder) compile() {
 
 	b.query = &esearch.ElasticQuery{
 		Source: make([]string, 0),
-		Sort:   make([]esearch.Sort, 0),
+		Sort:   make([]esearch.Sorter, 0),
 		Query:  make(map[string]esearch.QueryBuilder),
 	}
 
@@ -33,17 +35,28 @@ func (b *Builder) compile() {
 		b.query.Collapse = b.collapse
 	}
 
-	boolQuery := b.component()
+	if b.where != nil {
+		boolQuery := b.componentWhere()
 
-	if len(boolQuery.Should) > 0 {
-		boolQuery.MinimumShouldMatch = b.minimumShouldMatch
+		if len(boolQuery.Should) > 0 {
+			boolQuery.MinimumShouldMatch = b.minimumShouldMatch
+		}
+
+		b.query.Query["bool"] = boolQuery
 	}
 
-	b.query.Query["bool"] = boolQuery
-	b.query.Aggs = b.aggs
+	if b.aggregations != nil {
+		aggSet := make(map[string]esearch.Aggregator)
+		b.componentAggs(aggSet)
+		log.Println("%#v", aggSet)
+		bytes, err := json.Marshal(aggSet)
+		log.Fatalln(string(bytes), err)
+	}
+
+	//b.query.Aggs = b.aggs
 }
 
-func (b *Builder) component() *esearch.BoolQuery {
+func (b *Builder) componentWhere() *esearch.BoolQuery {
 	boolQuery := &esearch.BoolQuery{}
 
 	for key, items := range b.where {
@@ -63,7 +76,7 @@ func (b *Builder) component() *esearch.BoolQuery {
 		for _, fn := range fns {
 			newBuilder := NewBuilder()
 			fn(newBuilder)
-			newBoolQuery := newBuilder.component()
+			newBoolQuery := newBuilder.componentWhere()
 
 			newQuery := make(esearch.Query)
 			newQuery["bool"] = newBoolQuery
@@ -82,4 +95,23 @@ func (b *Builder) component() *esearch.BoolQuery {
 	}
 
 	return boolQuery
+}
+
+func (b *Builder) componentAggs(aggSet map[string]esearch.Aggregator) {
+	for alias, aggregation := range b.aggregations {
+		aggregation.subAggs()
+		aggSet[alias] = aggregation.Params
+	}
+}
+
+func (aggregation *Aggregation) subAggs() {
+	if aggregation.SubAggs != nil {
+		newAggSet := make(map[string]esearch.Aggregator)
+		for _, subAggFunc := range aggregation.SubAggs {
+			newBuilder := NewBuilder()
+			subAggFunc(newBuilder)
+			newBuilder.componentAggs(newAggSet)
+		}
+		aggregation.Params.Aggregate(newAggSet)
+	}
 }
