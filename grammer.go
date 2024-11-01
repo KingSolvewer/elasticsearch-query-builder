@@ -27,7 +27,7 @@ func (b *Builder) compile() {
 		b.query.From = esearch.Uint(b.from)
 	}
 
-	if b.collapse.Field != "" {
+	if b.collapse != nil {
 		b.query.Collapse = b.collapse
 	}
 

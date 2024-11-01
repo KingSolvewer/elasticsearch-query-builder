@@ -119,7 +119,7 @@ type ElasticQuery struct {
 	Query      `json:"query,omitempty"`
 	PostFilter Query                 `json:"post_filter,omitempty"`
 	Aggs       map[string]Aggregator `json:"aggs,omitempty"`
-	Collapse   ExpandInnerHits       `json:"collapse,omitempty"`
+	Collapse   Collapsor             `json:"collapse,omitempty"`
 }
 
 type Query map[string]QueryBuilder
@@ -155,6 +155,10 @@ type Aggregator interface {
 type Request interface {
 	Query() ([]byte, error)
 	ScrollQuery() ([]byte, error)
+}
+
+type Collapsor interface {
+	Collapse()
 }
 
 type ExpandInnerHits interface {

@@ -23,7 +23,7 @@ type Builder struct {
 	query              *esearch.ElasticQuery
 	scroll             string
 	scrollId           string
-	collapse           *collapse.Collapse
+	collapse           *collapse.Collapser
 	Request            esearch.Request
 	byteData           []byte
 }
@@ -71,12 +71,13 @@ func (b *Builder) Reset() *Builder {
 	b.sort = make([]esearch.Sorter, 0)
 	b.where = make(map[esearch.BoolClauseType][]esearch.BoolBuilder)
 	b.nested = make(map[esearch.BoolClauseType][]NestWhereFunc)
+	b.postWhere = nil
 	b.minimumShouldMatch = 0
 	b.aggregations = make(map[string]*Aggregation)
 	b.query = nil
 	b.scroll = ""
 	b.scrollId = ""
-	b.collapse = &collapse.Collapse{}
+	b.collapse = nil
 
 	return b
 }
@@ -135,9 +136,26 @@ func Collapse(field string) *Builder {
 }
 
 func (b *Builder) Collapse(field string) *Builder {
-	b.collapse = &collapse.Collapse{
+	b.collapse = &collapse.Collapser{
 		Field: field,
 	}
+	return b
+}
+
+func CollapseParams(field string, fn collapse.ParamsFunc) *Builder {
+	return builder.CollapseParams(field, fn)
+}
+
+func (b *Builder) CollapseParams(field string, fn collapse.ParamsFunc) *Builder {
+	b.collapse = &collapse.Collapser{
+		Field: field,
+	}
+
+	if fn != nil {
+		params := fn()
+		b.collapse.CollapsedParams = params
+	}
+
 	return b
 }
 
