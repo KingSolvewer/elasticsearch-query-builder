@@ -20,7 +20,6 @@ type Builder struct {
 	postWhere          NestWhereFunc
 	minimumShouldMatch int
 	aggregations       map[string]*Aggregation
-	query              *esearch.ElasticQuery
 	scroll             string
 	scrollId           string
 	collapse           *collapse.Collapser
@@ -40,24 +39,20 @@ func NewBuilder() *Builder {
 	}
 }
 
-func Dsl() string {
-	return builder.Dsl()
-}
-
 func (b *Builder) Dsl() string {
 	bytes, _ := b.Marshal()
 
 	return string(bytes)
 }
 
-func Marshal() ([]byte, error) {
-	return builder.Marshal()
+func (b *Builder) Marshal() ([]byte, error) {
+	query := b.compile()
+
+	return json.Marshal(query)
 }
 
-func (b *Builder) Marshal() ([]byte, error) {
-	b.compile()
-
-	return json.Marshal(b.query)
+func (b *Builder) GetQuery() *esearch.ElasticQuery {
+	return b.compile()
 }
 
 func Reset() *Builder {
@@ -74,16 +69,11 @@ func (b *Builder) Reset() *Builder {
 	b.postWhere = nil
 	b.minimumShouldMatch = 0
 	b.aggregations = make(map[string]*Aggregation)
-	b.query = nil
 	b.scroll = ""
 	b.scrollId = ""
 	b.collapse = nil
 
 	return b
-}
-
-func Clone() *Builder {
-	return builder.Clone()
 }
 
 func (b *Builder) Clone() *Builder {
@@ -97,11 +87,21 @@ func (b *Builder) Clone() *Builder {
 		nested[key] = append(nested[key], nestedFuncSet...)
 	}
 
+	aggregations := make(map[string]*Aggregation)
+	for key, agg := range b.aggregations {
+		aggregations[key] = &Aggregation{
+			Params:  agg.Params,
+			SubAggs: agg.SubAggs,
+		}
+	}
+
 	return &Builder{
 		fields:             b.fields,
 		where:              where,
 		nested:             nested,
+		postWhere:          b.postWhere,
 		minimumShouldMatch: b.minimumShouldMatch,
+		aggregations:       aggregations,
 	}
 }
 

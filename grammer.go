@@ -4,31 +4,31 @@ import (
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 )
 
-func (b *Builder) compile() {
-	b.query = &esearch.ElasticQuery{
+func (b *Builder) compile() *esearch.ElasticQuery {
+	query := &esearch.ElasticQuery{
 		Query:      make(esearch.Query),
 		PostFilter: make(esearch.Query),
 	}
 
 	if b.fields != nil || len(b.fields) > 0 {
-		b.query.Source = b.fields
+		query.Source = b.fields
 	}
 	if b.sort != nil || len(b.sort) > 0 {
-		b.query.Sort = b.sort
+		query.Sort = b.sort
 	}
 
 	if b.size >= 0 {
-		b.query.Size = esearch.Uint(b.size)
+		query.Size = esearch.Uint(b.size)
 	} else {
-		b.query.Size = esearch.Uint(10)
+		query.Size = esearch.Uint(10)
 	}
 
 	if b.from > 0 {
-		b.query.From = esearch.Uint(b.from)
+		query.From = esearch.Uint(b.from)
 	}
 
 	if b.collapse != nil {
-		b.query.Collapse = b.collapse
+		query.Collapse = b.collapse
 	}
 
 	if b.where != nil {
@@ -38,21 +38,23 @@ func (b *Builder) compile() {
 			boolQuery.MinimumShouldMatch = b.minimumShouldMatch
 		}
 
-		b.query.Query["bool"] = boolQuery
+		query.Query["bool"] = boolQuery
 	}
 
 	if b.postWhere != nil {
 		newBuilder := NewBuilder()
 		b.postWhere(newBuilder)
 		postQuery := newBuilder.componentWhere()
-		b.query.PostFilter["bool"] = postQuery
+		query.PostFilter["bool"] = postQuery
 	}
 
 	if b.aggregations != nil {
 		aggSet := make(map[string]esearch.Aggregator)
 		b.componentAggs(aggSet)
-		b.query.Aggs = aggSet
+		query.Aggs = aggSet
 	}
+
+	return query
 }
 
 func (b *Builder) componentWhere() *esearch.BoolQuery {

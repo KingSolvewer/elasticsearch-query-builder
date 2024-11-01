@@ -137,6 +137,12 @@ func NewYingyanEs() *YingyanEs {
 	return es
 }
 
+func (es *YingyanEs) Clone() *YingyanEs {
+	return &YingyanEs{
+		Builder: es.Builder.Clone(),
+	}
+}
+
 func (es *YingyanEs) SetIndex(index string) *YingyanEs {
 	es.index = index
 	return es

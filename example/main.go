@@ -40,6 +40,12 @@ func main() {
 	}).PostFilter(func(b *elastic.Builder) {
 		b.Where(ela.Stat, 1)
 	})
+
+	es1 := es.Clone()
+	es1.AppendField(ela.Content).Where(ela.CategoryId, 100).GroupBy(ela.NewsSimHash, aggs.TermsParam{})
+
+	log.Println(es1.Dsl())
+	log.Fatalln(es.Dsl())
 	//es.GroupBy(ela.NewsSimHash, aggs.TermsParam{Size: 10, Order: esearch.SortMap{"_key": esearch.Asc}}, func(b *elastic.Builder) {
 	//	b.GroupBy(ela.Stat, aggs.TermsParam{}, func(b *elastic.Builder) {
 	//		b.Histogram(ela.CreateTime, aggs.HistogramParam{})
