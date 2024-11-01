@@ -73,8 +73,27 @@ func (b *Builder) DateRange(field string, param aggs.RangeParam, subAggFuncSet .
 	return b.Aggs(field+"_"+esearch.DateRange, rangeAggs, subAggFuncSet...)
 }
 
+func (b *Builder) AggsFilter(field string, fn NestWhereFunc, subAggFuncs ...SubAggFunc) *Builder {
+
+	if fn != nil {
+		newBuilder := NewBuilder()
+		fn(newBuilder)
+
+		query := make(esearch.Query)
+		query["bool"] = newBuilder.componentWhere()
+
+		filterAggs := &aggs.FilterAggs{
+			Filter: query,
+		}
+
+		return b.Aggs(field+"_"+esearch.AggsFilter, filterAggs, subAggFuncs...)
+	}
+
+	return b
+}
+
 func (b *Builder) Aggs(aggField string, aggregator esearch.Aggregator, subAggFuncSet ...SubAggFunc) *Builder {
-	agg := Aggregation{
+	agg := &Aggregation{
 		Params:  aggregator,
 		SubAggs: subAggFuncSet,
 	}
@@ -172,7 +191,7 @@ func (b *Builder) TopHits(hits aggs.TopHitsParam) *Builder {
 	return b.Aggs(esearch.TopHits, hitsAggs)
 }
 
-func (b *Builder) TopHitsFunc(fn NestedFunc) *Builder {
+func (b *Builder) TopHitsFunc(fn NestWhereFunc) *Builder {
 	newBuilder := NewBuilder()
 	fn(newBuilder)
 	hits := newBuilder.topHitsAgg()

@@ -59,6 +59,8 @@ const (
 	Range         = "range"
 	DateRange     = "date_range"
 	DateHistogram = "date_histogram"
+	AggsFilter    = "filter"
+
 	Avg           = "avg"
 	Max           = "max"
 	Min           = "min"
@@ -129,7 +131,7 @@ type BoolQuery struct {
 	MinimumShouldMatch int           `json:"minimum_should_match,omitempty"`
 }
 
-func (b BoolQuery) QueryBuild() string {
+func (b *BoolQuery) QueryBuild() string {
 	return ""
 }
 
@@ -137,7 +139,7 @@ func (query Query) QueryBuild() string {
 	return ""
 }
 
-func (b BoolQuery) BoolBuild() string {
+func (b *BoolQuery) BoolBuild() string {
 	return ""
 }
 

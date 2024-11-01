@@ -5,7 +5,6 @@ import (
 	"fmt"
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
 	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
-	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 	"log"
 	"main/ela"
 )
@@ -34,17 +33,24 @@ func main() {
 	//es.SearchTime("2024-02-01 00:00:00", "2024-02-05 00:00:00")
 	es.WhereExists(ela.ClaimUserId)
 	es.Collapse(ela.NewsSimHash)
-	es.GroupBy(ela.NewsSimHash, aggs.TermsParam{Size: 10, Order: esearch.SortMap{"_key": esearch.Asc}}, func(b *elastic.Builder) {
-		b.GroupBy(ela.Stat, aggs.TermsParam{}, func(b *elastic.Builder) {
-			b.Histogram(ela.CreateTime, aggs.HistogramParam{})
-		}, func(b *elastic.Builder) {
-			b.From(1).Size(10).OrderBy("_count", esearch.Desc)
-		})
+	es.AggsFilter(ela.NewsSimHash, func(b *elastic.Builder) {
+		b.Where(ela.Stat, ela.StatArchived).Where(ela.IsDelete, 0)
 	}, func(b *elastic.Builder) {
 		b.GroupBy(ela.CategoryId, aggs.TermsParam{})
-	}, func(b *elastic.Builder) {
-		b.TopHits(aggs.TopHitsParam{From: 1, Size: 10})
 	})
+	//es.GroupBy(ela.NewsSimHash, aggs.TermsParam{Size: 10, Order: esearch.SortMap{"_key": esearch.Asc}}, func(b *elastic.Builder) {
+	//	b.GroupBy(ela.Stat, aggs.TermsParam{}, func(b *elastic.Builder) {
+	//		b.Histogram(ela.CreateTime, aggs.HistogramParam{})
+	//	}, func(b *elastic.Builder) {
+	//		b.TopHitsFunc(func(b *elastic.Builder) {
+	//			b.From(2).Size(10).OrderBy("_count", esearch.Desc)
+	//		})
+	//	})
+	//}, func(b *elastic.Builder) {
+	//	b.GroupBy(ela.CategoryId, aggs.TermsParam{})
+	//}, func(b *elastic.Builder) {
+	//	b.TopHits(aggs.TopHitsParam{From: 1, Size: 10})
+	//})
 	//es.TopHits(aggs.TopHitsParam{})
 	//es.TopHitsFunc(func(b *elastic.Builder) {
 	//	b.From(0).Size(10).OrderBy(ela.NewsSimHash, esearch.Desc)

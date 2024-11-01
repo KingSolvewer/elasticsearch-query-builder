@@ -8,7 +8,7 @@ import (
 	"github.com/KingSolvewer/elasticsearch-query-builder/termlevel"
 )
 
-type NestedFunc func(b *Builder)
+type NestWhereFunc func(b *Builder)
 
 type Builder struct {
 	fields             []string
@@ -16,9 +16,9 @@ type Builder struct {
 	from               uint
 	sort               []esearch.Sorter
 	where              map[esearch.BoolClauseType][]esearch.BoolBuilder
-	nested             map[esearch.BoolClauseType][]NestedFunc
+	nested             map[esearch.BoolClauseType][]NestWhereFunc
 	minimumShouldMatch int
-	aggregations       map[string]Aggregation
+	aggregations       map[string]*Aggregation
 	query              *esearch.ElasticQuery
 	scroll             string
 	scrollId           string
@@ -34,8 +34,8 @@ func NewBuilder() *Builder {
 		fields:       make([]string, 0),
 		sort:         make([]esearch.Sorter, 0),
 		where:        make(map[esearch.BoolClauseType][]esearch.BoolBuilder),
-		nested:       make(map[esearch.BoolClauseType][]NestedFunc),
-		aggregations: make(map[string]Aggregation),
+		nested:       make(map[esearch.BoolClauseType][]NestWhereFunc),
+		aggregations: make(map[string]*Aggregation),
 	}
 }
 
@@ -69,9 +69,9 @@ func (b *Builder) Reset() *Builder {
 	b.from = 0
 	b.sort = make([]esearch.Sorter, 0)
 	b.where = make(map[esearch.BoolClauseType][]esearch.BoolBuilder)
-	b.nested = make(map[esearch.BoolClauseType][]NestedFunc)
+	b.nested = make(map[esearch.BoolClauseType][]NestWhereFunc)
 	b.minimumShouldMatch = 0
-	b.aggregations = make(map[string]Aggregation)
+	b.aggregations = make(map[string]*Aggregation)
 	b.query = nil
 	b.scroll = ""
 	b.scrollId = ""
@@ -90,7 +90,7 @@ func (b *Builder) Clone() *Builder {
 		where[key] = append(where[key], boolBuilderSet...)
 	}
 
-	nested := make(map[esearch.BoolClauseType][]NestedFunc)
+	nested := make(map[esearch.BoolClauseType][]NestWhereFunc)
 	for key, nestedFuncSet := range b.nested {
 		nested[key] = append(nested[key], nestedFuncSet...)
 	}
@@ -342,12 +342,12 @@ func (b *Builder) WhereMultiMatch(field []string, value string, fieldType esearc
 }
 
 // WhereNested Must 嵌套查询, 例如嵌套 should 语句
-func WhereNested(fn NestedFunc) *Builder {
+func WhereNested(fn NestWhereFunc) *Builder {
 	return builder.WhereNested(fn)
 }
 
 // WhereNested Must 嵌套查询, 例如在 must 语句中嵌套 should 语句
-func (b *Builder) WhereNested(fn NestedFunc) *Builder {
+func (b *Builder) WhereNested(fn NestWhereFunc) *Builder {
 	b.nested[esearch.Must] = append(b.nested[esearch.Must], fn)
 
 	return b
@@ -473,12 +473,12 @@ func (b *Builder) WhereNotMultiMatch(field []string, value string, fieldType ese
 }
 
 // WhereNotNested MustNot 嵌套查询, 例如嵌套 should 语句
-func WhereNotNested(fn NestedFunc) *Builder {
+func WhereNotNested(fn NestWhereFunc) *Builder {
 	return builder.WhereNotNested(fn)
 }
 
 // WhereNotNested Must 嵌套查询, 例如在 must 语句中嵌套 should 语句
-func (b *Builder) WhereNotNested(fn NestedFunc) *Builder {
+func (b *Builder) WhereNotNested(fn NestWhereFunc) *Builder {
 	b.nested[esearch.MustNot] = append(b.nested[esearch.MustNot], fn)
 
 	return b
@@ -606,12 +606,12 @@ func (b *Builder) OrWhereMultiMatch(field []string, value string, fieldType esea
 }
 
 // OrWhereNested Should 嵌套查询, 例如嵌套 should 语句
-func OrWhereNested(fn NestedFunc) *Builder {
+func OrWhereNested(fn NestWhereFunc) *Builder {
 	return builder.OrWhereNested(fn)
 }
 
 // OrWhereNested Should 嵌套查询, 例如在 must 语句中嵌套 should 语句
-func (b *Builder) OrWhereNested(fn NestedFunc) *Builder {
+func (b *Builder) OrWhereNested(fn NestWhereFunc) *Builder {
 	b.nested[esearch.Should] = append(b.nested[esearch.Should], fn)
 
 	return b
@@ -748,12 +748,12 @@ func (b *Builder) FilterMultiMatch(field []string, value string, fieldType esear
 }
 
 // FilterNested Filter 嵌套查询, 例如嵌套 should 语句
-func FilterNested(fn NestedFunc) *Builder {
+func FilterNested(fn NestWhereFunc) *Builder {
 	return builder.FilterNested(fn)
 }
 
 // FilterNested Filter 嵌套查询, 例如在 must 语句中嵌套 should 语句
-func (b *Builder) FilterNested(fn NestedFunc) *Builder {
+func (b *Builder) FilterNested(fn NestWhereFunc) *Builder {
 	b.nested[esearch.FilterClause] = append(b.nested[esearch.FilterClause], fn)
 
 	return b

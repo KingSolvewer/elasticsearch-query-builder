@@ -228,3 +228,12 @@ func (p TopHitsParam) TopHitsAgg() *TopHitsAggs {
 
 	return topHitsAgg
 }
+
+type FilterAggs struct {
+	Filter esearch.Query                 `json:"filter"`
+	Aggs   map[string]esearch.Aggregator `json:"aggs,omitempty"`
+}
+
+func (agg *FilterAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
+	agg.Aggs = subAgg
+}

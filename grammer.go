@@ -1,13 +1,10 @@
 package elastic
 
 import (
-	"encoding/json"
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
-	"log"
 )
 
 func (b *Builder) compile() {
-
 	b.query = &esearch.ElasticQuery{
 		Source: make([]string, 0),
 		Sort:   make([]esearch.Sorter, 0),
@@ -48,12 +45,8 @@ func (b *Builder) compile() {
 	if b.aggregations != nil {
 		aggSet := make(map[string]esearch.Aggregator)
 		b.componentAggs(aggSet)
-		log.Println("%#v", aggSet)
-		bytes, err := json.Marshal(aggSet)
-		log.Fatalln(string(bytes), err)
+		b.query.Aggs = aggSet
 	}
-
-	//b.query.Aggs = b.aggs
 }
 
 func (b *Builder) componentWhere() *esearch.BoolQuery {
