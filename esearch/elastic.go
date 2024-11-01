@@ -112,13 +112,14 @@ func (i Uint) Page() uint {
 }
 
 type ElasticQuery struct {
-	Source   []string  `json:"_source,omitempty"`
-	Size     Paginator `json:"size,omitempty"`
-	From     Paginator `json:"from,omitempty"`
-	Sort     []Sorter  `json:"sort,omitempty"`
-	Query    `json:"query,omitempty"`
-	Aggs     map[string]Aggregator `json:"aggs,omitempty"`
-	Collapse ExpandInnerHits       `json:"collapse,omitempty"`
+	Source     []string  `json:"_source,omitempty"`
+	Size       Paginator `json:"size,omitempty"`
+	From       Paginator `json:"from,omitempty"`
+	Sort       []Sorter  `json:"sort,omitempty"`
+	Query      `json:"query,omitempty"`
+	PostFilter Query                 `json:"post_filter,omitempty"`
+	Aggs       map[string]Aggregator `json:"aggs,omitempty"`
+	Collapse   ExpandInnerHits       `json:"collapse,omitempty"`
 }
 
 type Query map[string]QueryBuilder

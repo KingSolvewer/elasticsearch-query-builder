@@ -6,9 +6,8 @@ import (
 
 func (b *Builder) compile() {
 	b.query = &esearch.ElasticQuery{
-		Source: make([]string, 0),
-		Sort:   make([]esearch.Sorter, 0),
-		Query:  make(map[string]esearch.QueryBuilder),
+		Query:      make(esearch.Query),
+		PostFilter: make(esearch.Query),
 	}
 
 	if b.fields != nil || len(b.fields) > 0 {
@@ -40,6 +39,13 @@ func (b *Builder) compile() {
 		}
 
 		b.query.Query["bool"] = boolQuery
+	}
+
+	if b.postWhere != nil {
+		newBuilder := NewBuilder()
+		b.postWhere(newBuilder)
+		postQuery := newBuilder.componentWhere()
+		b.query.PostFilter["bool"] = postQuery
 	}
 
 	if b.aggregations != nil {

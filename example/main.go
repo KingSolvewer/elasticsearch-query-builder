@@ -37,6 +37,8 @@ func main() {
 		b.Where(ela.Stat, ela.StatArchived).Where(ela.IsDelete, 0)
 	}, func(b *elastic.Builder) {
 		b.GroupBy(ela.CategoryId, aggs.TermsParam{})
+	}).PostFilter(func(b *elastic.Builder) {
+		b.Where(ela.Stat, 1)
 	})
 	//es.GroupBy(ela.NewsSimHash, aggs.TermsParam{Size: 10, Order: esearch.SortMap{"_key": esearch.Asc}}, func(b *elastic.Builder) {
 	//	b.GroupBy(ela.Stat, aggs.TermsParam{}, func(b *elastic.Builder) {

@@ -17,6 +17,7 @@ type Builder struct {
 	sort               []esearch.Sorter
 	where              map[esearch.BoolClauseType][]esearch.BoolBuilder
 	nested             map[esearch.BoolClauseType][]NestWhereFunc
+	postWhere          NestWhereFunc
 	minimumShouldMatch int
 	aggregations       map[string]*Aggregation
 	query              *esearch.ElasticQuery
@@ -944,4 +945,10 @@ func checkType(value any) bool {
 	default:
 		return false
 	}
+}
+
+func (b *Builder) PostFilter(fn NestWhereFunc) *Builder {
+	b.postWhere = fn
+
+	return b
 }
