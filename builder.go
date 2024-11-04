@@ -23,6 +23,8 @@ type Builder struct {
 	scroll             string
 	scrollId           string
 	collapse           *collapse.Collapser
+	raw                string
+	QueryDsl           string
 	Request            esearch.Request
 	byteData           []byte
 }
@@ -39,16 +41,23 @@ func NewBuilder() *Builder {
 	}
 }
 
-func (b *Builder) Dsl() string {
-	bytes, _ := b.Marshal()
-
-	return string(bytes)
+func (b *Builder) Dsl() {
+	_ = b.Marshal()
 }
 
-func (b *Builder) Marshal() ([]byte, error) {
-	query := b.compile()
-
-	return json.Marshal(query)
+func (b *Builder) Marshal() error {
+	if b.raw != "" {
+		b.QueryDsl = b.raw
+		return nil
+	} else {
+		query := b.compile()
+		bytes, err := json.Marshal(query)
+		if err != nil {
+			b.QueryDsl = string(bytes)
+			return nil
+		}
+		return err
+	}
 }
 
 func (b *Builder) GetQuery() *esearch.ElasticQuery {
@@ -249,6 +258,17 @@ func Where(field string, value any) *Builder {
 func (b *Builder) Where(field string, value any) *Builder {
 	b.termQuery(esearch.Must, field, value)
 
+	return b
+}
+
+// WhereRaw es 原始查询语句
+func WhereRaw(raw string) *Builder {
+	return builder.WhereRaw(raw)
+}
+
+// WhereRaw es 原始查询语句
+func (b *Builder) WhereRaw(raw string) *Builder {
+	b.raw = raw
 	return b
 }
 

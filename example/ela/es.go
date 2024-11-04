@@ -138,9 +138,12 @@ func NewYingyanEs() *YingyanEs {
 }
 
 func (es *YingyanEs) Clone() *YingyanEs {
-	return &YingyanEs{
+	newEs := &YingyanEs{
 		Builder: es.Builder.Clone(),
 	}
+	newEs.Builder.Request = newEs
+
+	return newEs
 }
 
 func (es *YingyanEs) SetIndex(index string) *YingyanEs {
@@ -238,10 +241,6 @@ func (es *YingyanEs) ScrollQuery() ([]byte, error) {
 }
 
 func (es *YingyanEs) getParams(scroll bool) ([]byte, error) {
-	byteSet, err := es.Marshal()
-	if err != nil {
-		return nil, err
-	}
 
 	startStamp, err := es.parseTime("start")
 	if err != nil {
@@ -254,7 +253,7 @@ func (es *YingyanEs) getParams(scroll bool) ([]byte, error) {
 
 	params := Params{
 		Index:      es.index,
-		Statement:  string(byteSet),
+		Statement:  es.QueryDsl,
 		StartStamp: startStamp,
 		EndStamp:   endStamp,
 	}

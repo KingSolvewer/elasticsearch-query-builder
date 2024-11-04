@@ -77,6 +77,11 @@ func (b *Builder) runQuery() (data []byte, err error) {
 		panic("请先实现elastic.Request接口")
 	}
 
+	err = b.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
 	if b.scroll == "" {
 		data, err = b.Request.Query()
 	} else {
