@@ -41,31 +41,28 @@ func NewBuilder() *Builder {
 	}
 }
 
-func (b *Builder) Dsl() {
-	_ = b.Marshal()
+func (b *Builder) Dsl() string {
+	dsl, _ := b.Marshal()
+
+	return dsl
 }
 
-func (b *Builder) Marshal() error {
+func (b *Builder) Marshal() (string, error) {
 	if b.raw != "" {
 		b.QueryDsl = b.raw
-		return nil
+		return b.raw, nil
 	} else {
 		query := b.compile()
 		bytes, err := json.Marshal(query)
 		if err != nil {
 			b.QueryDsl = string(bytes)
-			return nil
 		}
-		return err
+		return b.QueryDsl, err
 	}
 }
 
 func (b *Builder) GetQuery() *esearch.ElasticQuery {
 	return b.compile()
-}
-
-func Reset() *Builder {
-	return builder.Reset()
 }
 
 func (b *Builder) Reset() *Builder {
