@@ -1,4 +1,4 @@
-package ela
+package yingyan
 
 import (
 	"bytes"
@@ -152,13 +152,8 @@ func (es *YingyanEs) SetIndex(index string) *YingyanEs {
 }
 
 func (es *YingyanEs) SearchTime(startTime, endTime string) *YingyanEs {
-	if startTime != "" {
-		es.startTime = startTime
-	}
-
-	if endTime != "" {
-		es.endTime = endTime
-	}
+	es.startTime = startTime
+	es.endTime = endTime
 
 	return es
 }
@@ -215,10 +210,23 @@ func (es *YingyanEs) parseTime(typ string) (int64, error) {
 		dateTime = es.endTime
 	}
 
-	t, err := time.Parse(DateTime, dateTime)
-	if err != nil {
-		return 0, err
+	var (
+		t   time.Time
+		err error
+	)
+	if dateTime == "" {
+		if typ == "start" {
+			t = time.Now().AddDate(0, -3, 0)
+		} else {
+			t = time.Now()
+		}
+	} else {
+		t, err = time.Parse(DateTime, dateTime)
+		if err != nil {
+			return 0, err
+		}
 	}
+
 	return t.UnixMilli(), nil
 }
 
@@ -282,7 +290,9 @@ func (es *YingyanEs) request(jsonData []byte, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	body, err := io.ReadAll(resp.Body)
 	return body, err

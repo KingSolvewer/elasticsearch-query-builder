@@ -13,6 +13,7 @@ type NestWhereFunc func(b *Builder)
 type Builder struct {
 	fields             []string
 	size               uint
+	manualSize         bool
 	from               uint
 	sort               []esearch.Sorter
 	where              map[esearch.BoolClauseType][]esearch.BoolBuilder
@@ -54,7 +55,7 @@ func (b *Builder) Marshal() (string, error) {
 	} else {
 		query := b.compile()
 		bytes, err := json.Marshal(query)
-		if err != nil {
+		if err == nil {
 			b.QueryDsl = string(bytes)
 		}
 		return b.QueryDsl, err
@@ -193,6 +194,7 @@ func Size(value uint) *Builder {
 
 func (b *Builder) Size(value uint) *Builder {
 	b.size = value
+	b.manualSize = true
 
 	return b
 }

@@ -13,14 +13,13 @@ func (b *Builder) compile() *esearch.ElasticQuery {
 	if b.fields != nil || len(b.fields) > 0 {
 		query.Source = b.fields
 	}
+
 	if b.sort != nil || len(b.sort) > 0 {
 		query.Sort = b.sort
 	}
 
-	if b.size >= 0 {
+	if b.manualSize {
 		query.Size = esearch.Uint(b.size)
-	} else {
-		query.Size = esearch.Uint(10)
 	}
 
 	if b.from > 0 {
@@ -31,7 +30,7 @@ func (b *Builder) compile() *esearch.ElasticQuery {
 		query.Collapse = b.collapse
 	}
 
-	if b.where != nil {
+	if len(b.where) != 0 {
 		boolQuery := b.componentWhere()
 
 		if len(boolQuery.Should) > 0 {
@@ -39,6 +38,8 @@ func (b *Builder) compile() *esearch.ElasticQuery {
 		}
 
 		query.Query["bool"] = boolQuery
+	} else {
+		query.Query["match_all"] = &esearch.BoolQuery{}
 	}
 
 	if b.postWhere != nil {

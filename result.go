@@ -7,6 +7,7 @@ import (
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 	"github.com/valyala/fastjson"
 	"github.com/valyala/fastjson/fastfloat"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -62,19 +63,62 @@ type Result struct {
 	LastPage      esearch.Paginator `json:"last_page,omitempty"`
 }
 
-type CardinalityAgg struct {
+type CountResult struct {
 	Value int `json:"value"`
 }
 
-type TermsAgg struct {
-	DocCountErrorUpperBound int       `json:"doc_count_error_upper_bound"`
-	SumOtherDocCount        int       `json:"sum_other_doc_count"`
-	Buckets                 []Buckets `json:"buckets"`
+type ArithmeticResult struct {
+	Value float64 `json:"value"`
 }
 
-type Buckets struct {
-	Key      string `json:"key"`
-	DocCount int    `json:"doc_count"`
+type StatsResult struct {
+	Count int     `json:"count"`
+	Min   float64 `json:"min"`
+	Max   float64 `json:"max"`
+	Avg   float64 `json:"avg"`
+	Sum   float64 `json:"sum"`
+}
+
+type ExtendStatsResult struct {
+	*StatsResult
+	SumOfSquares       float64 `json:"sum_of_squares"`
+	Variance           float64 `json:"variance"`
+	StdDeviation       float64 `json:"std_deviation"`
+	StdDeviationBounds `json:"std_deviation_bounds"`
+}
+
+type StdDeviationBounds struct {
+	Upper float64 `json:"upper"`
+	Lower float64 `json:"lower"`
+}
+
+type TermsResult struct {
+	DocCountErrorUpperBound int      `json:"doc_count_error_upper_bound"`
+	SumOtherDocCount        int      `json:"sum_other_doc_count"`
+	Buckets                 []Bucket `json:"buckets"`
+}
+
+type Bucket struct {
+	Key         string `json:"key"`
+	KeyAsString string `json:"key_as_string,omitempty"`
+	DocCount    int    `json:"doc_count"`
+}
+
+type HistogramResult struct {
+	Buckets []Bucket `json:"buckets"`
+}
+
+type RangeResult struct {
+	Buckets []RangeBucket
+}
+
+type RangeBucket struct {
+	Key          string `json:"key"`
+	To           string `json:"to,omitempty"`
+	ToAsString   string `json:"to_as_string,omitempty"`
+	From         string `json:"from,omitempty"`
+	FromAsString string `json:"from_as_string,omitempty"`
+	DocCount     int    `json:"doc_count"`
 }
 
 func (b *Builder) Parser(result *Result, value []byte, dest any) error {
@@ -87,6 +131,13 @@ func (b *Builder) Parser(result *Result, value []byte, dest any) error {
 		return err
 	}
 
+	code := v.GetInt("code")
+	if code != 0 {
+		msgV := v.Get("msg")
+		errorV := msgV.Get("error")
+		log.Fatalln(errorV)
+	}
+
 	hitsV := v.Get("hits")
 	result.Total = hitsV.GetInt("total")
 
@@ -97,11 +148,11 @@ func (b *Builder) Parser(result *Result, value []byte, dest any) error {
 			case map[string]any, *map[string]any:
 				mapValue, ok := dest.(map[string]interface{})
 				if !ok {
-					if v, ok := dest.(*map[string]interface{}); ok {
-						if *v == nil {
-							*v = map[string]interface{}{}
+					if m, ok := dest.(*map[string]interface{}); ok {
+						if *m == nil {
+							*m = map[string]interface{}{}
 						}
-						mapValue = *v
+						mapValue = *m
 					}
 				}
 				mapValue["id"] = string(hitsListV[0].GetStringBytes("_id"))
@@ -149,7 +200,12 @@ func (b *Builder) Parser(result *Result, value []byte, dest any) error {
 									name = field.Name
 								}
 
-								val, err = setFieldValue(field, sourceV.Get(name))
+								res := sourceV.Get(name)
+								if res == nil {
+									return fmt.Errorf("%v key is not existing in query result", name)
+								}
+
+								val, err = setFieldValue(field, res)
 								if err != nil {
 									return err
 								}
@@ -196,22 +252,89 @@ func (b *Builder) Parser(result *Result, value []byte, dest any) error {
 			if lastIndex != -1 && lastIndex+1 < len(key) {
 				lastString := key[lastIndex+1:]
 				switch lastString {
-				case esearch.Cardinality:
-					result.Aggs[key] = &CardinalityAgg{Value: v.GetInt("value")}
 				case esearch.Terms:
 					bucketsV := v.GetArray("buckets")
-					buckets := make([]Buckets, len(bucketsV))
+					buckets := make([]Bucket, len(bucketsV))
 					for i, item := range bucketsV {
-						buckets[i] = Buckets{
+						buckets[i] = Bucket{
 							Key:      string(item.GetStringBytes("key")),
 							DocCount: item.GetInt("doc_count"),
 						}
 					}
 
-					result.Aggs[key] = &TermsAgg{
+					result.Aggs[key] = &TermsResult{
 						DocCountErrorUpperBound: v.GetInt("doc_count_error_upper_bound"),
 						SumOtherDocCount:        v.GetInt("sum_other_doc_count"),
 						Buckets:                 buckets,
+					}
+				case esearch.Histogram, esearch.DateHistogram:
+					bucketsV := v.GetArray("buckets")
+					buckets := make([]Bucket, len(bucketsV))
+					for i, item := range bucketsV {
+						buckets[i] = Bucket{
+							Key:      string(item.GetStringBytes("key")),
+							DocCount: item.GetInt("doc_count"),
+						}
+						if lastString == esearch.DateHistogram {
+							buckets[i].KeyAsString = string(item.GetStringBytes("key_as_string"))
+						}
+					}
+
+					result.Aggs[key] = &HistogramResult{
+						Buckets: buckets,
+					}
+				case esearch.Range, esearch.DateRange:
+					bucketsV := v.GetArray("buckets")
+					buckets := make([]RangeBucket, len(bucketsV))
+
+					for i, item := range bucketsV {
+						buckets[i] = RangeBucket{
+							Key:      string(item.GetStringBytes("key")),
+							To:       string(item.GetStringBytes("to")),
+							From:     string(item.GetStringBytes("from")),
+							DocCount: item.GetInt("doc_count"),
+						}
+						if lastString == esearch.DateRange {
+							buckets[i].ToAsString = string(item.GetStringBytes("to_as_string"))
+							buckets[i].FromAsString = string(item.GetStringBytes("from_as_string"))
+						}
+					}
+
+					result.Aggs[key] = &RangeResult{
+						Buckets: buckets,
+					}
+				case esearch.Cardinality, esearch.ValueCount:
+					result.Aggs[key] = &CountResult{Value: v.GetInt("value")}
+				case esearch.Avg, esearch.Max, esearch.Min, esearch.Sum:
+					f := v.GetFloat64("value")
+					result.Aggs[key] = &ArithmeticResult{Value: f}
+				case esearch.Stats:
+					result.Aggs[key] = &StatsResult{
+						Count: v.GetInt("count"),
+						Max:   v.GetFloat64("max"),
+						Min:   v.GetFloat64("min"),
+						Sum:   v.GetFloat64("sum"),
+						Avg:   v.GetFloat64("avg"),
+					}
+				case esearch.ExtendedStats:
+					stdDeviationBoundsV := v.Get("std_deviation_bounds")
+					stdDeviationBounds := StdDeviationBounds{
+						Upper: stdDeviationBoundsV.GetFloat64("upper"),
+						Lower: stdDeviationBoundsV.GetFloat64("lower"),
+					}
+
+					result.Aggs[key] = &ExtendStatsResult{
+						StatsResult: &StatsResult{
+							Count: v.GetInt("count"),
+							Max:   v.GetFloat64("max"),
+							Min:   v.GetFloat64("min"),
+							Sum:   v.GetFloat64("sum"),
+							Avg:   v.GetFloat64("avg"),
+						},
+						SumOfSquares:       v.GetFloat64("sum_of_squares"),
+						Variance:           v.GetFloat64("variance"),
+						StdDeviation:       v.GetFloat64("std_deviation"),
+						StdDeviationBounds: stdDeviationBounds,
 					}
 				}
 			}
@@ -256,6 +379,8 @@ func getString(value *fastjson.Value) (val string, err error) {
 		val = "true"
 	case fastjson.TypeFalse:
 		val = "false"
+	case fastjson.TypeNull:
+		val = ""
 	default:
 		err = fmt.Errorf("cannot convert %v to string", value.Type())
 	}
@@ -270,6 +395,8 @@ func getInt(value *fastjson.Value) (val int, err error) {
 	case fastjson.TypeString:
 		// 尝试将字符串转换为整数
 		val, err = strconv.Atoi(string(value.GetStringBytes()))
+	case fastjson.TypeNull:
+		val = 0
 	default:
 		err = fmt.Errorf("cannot convert %v to int", value.Type())
 	}
@@ -284,6 +411,8 @@ func getInt64(value *fastjson.Value) (val int64, err error) {
 	case fastjson.TypeString:
 		// 尝试将字符串转换为整数
 		val, err = fastfloat.ParseInt64(string(value.GetStringBytes()))
+	case fastjson.TypeNull:
+		val = 0
 	default:
 		err = fmt.Errorf("cannot convert %v to int", value.Type())
 	}
@@ -300,6 +429,8 @@ func getUint(value *fastjson.Value) (val uint, err error) {
 		var temp uint64
 		temp, err = fastfloat.ParseUint64(string(value.GetStringBytes()))
 		val = uint(temp)
+	case fastjson.TypeNull:
+		val = 0
 	default:
 		err = fmt.Errorf("cannot convert %v to int", value.Type())
 	}
@@ -314,6 +445,8 @@ func getUint64(value *fastjson.Value) (val uint64, err error) {
 	case fastjson.TypeString:
 		// 尝试将字符串转换为整数
 		val, err = fastfloat.ParseUint64(string(value.GetStringBytes()))
+	case fastjson.TypeNull:
+		val = 0
 	default:
 		err = fmt.Errorf("cannot convert %v to int", value.Type())
 	}
@@ -328,6 +461,8 @@ func getFloat64(value *fastjson.Value) (val float64, err error) {
 	case fastjson.TypeString:
 		// 尝试将字符串转换为整数
 		val, err = strconv.ParseFloat(string(value.GetStringBytes()), 64)
+	case fastjson.TypeNull:
+		val = float64(0)
 	default:
 		err = fmt.Errorf("cannot convert %v to int", value.Type())
 	}
@@ -344,6 +479,8 @@ func getBool(value *fastjson.Value) (val bool, err error) {
 		val = str == "true" || str == "1" || str == "yes" || str == "on"
 	case fastjson.TypeNumber:
 		val = value.GetInt64() != 0
+	case fastjson.TypeNull:
+		val = false
 	default:
 		err = fmt.Errorf("cannot convert %v to bool", value.Type())
 	}

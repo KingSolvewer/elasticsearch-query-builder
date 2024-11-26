@@ -74,10 +74,10 @@ func (b *Builder) Paginator(page, size uint, dest any) (*Result, error) {
 
 func (b *Builder) runQuery() (data []byte, err error) {
 	if b.Request == nil {
-		panic("请先实现elastic.Request接口")
+		panic("You must to implement elastic.Request interface")
 	}
 
-	err = b.Marshal()
+	_, err = b.Marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +93,10 @@ func (b *Builder) runQuery() (data []byte, err error) {
 
 func (b *Builder) GetRawData() []byte {
 	return b.byteData
+}
+
+func (b *Builder) GetResult() string {
+	return string(b.byteData)
 }
 
 func checkDestType(dest any) error {
