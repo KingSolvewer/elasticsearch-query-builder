@@ -99,9 +99,10 @@ type TermsResult struct {
 }
 
 type Bucket struct {
-	Key         string `json:"key"`
-	KeyAsString string `json:"key_as_string,omitempty"`
-	DocCount    int    `json:"doc_count"`
+	Key         string                  `json:"key"`
+	KeyAsString string                  `json:"key_as_string,omitempty"`
+	DocCount    int                     `json:"doc_count"`
+	Aggs        map[string]*TermsResult `json:"aggs,omitempty"`
 }
 
 type HistogramResult struct {
@@ -133,9 +134,8 @@ func (b *Builder) Parser(result *Result, value []byte, dest any) error {
 
 	code := v.GetInt("code")
 	if code != 0 {
-		msgV := v.Get("msg")
-		errorV := msgV.Get("error")
-		log.Fatalln(errorV)
+		msgV := v.GetStringBytes("msg")
+		return errors.New(string(msgV))
 	}
 
 	hitsV := v.Get("hits")
@@ -244,10 +244,13 @@ func (b *Builder) Parser(result *Result, value []byte, dest any) error {
 
 	aggsV := v.GetObject("aggregations")
 	if aggsV != nil {
+
+		b.aggParser(aggsV)
+		log.Fatalln(12312)
 		result.Aggs = make(map[string]any)
 		aggsV.Visit(func(k []byte, v *fastjson.Value) {
 			key := string(k)
-
+			log.Println(key)
 			lastIndex := strings.LastIndex(key, "_")
 			if lastIndex != -1 && lastIndex+1 < len(key) {
 				lastString := key[lastIndex+1:]
@@ -256,9 +259,36 @@ func (b *Builder) Parser(result *Result, value []byte, dest any) error {
 					bucketsV := v.GetArray("buckets")
 					buckets := make([]Bucket, len(bucketsV))
 					for i, item := range bucketsV {
+						obj := item.GetObject()
+						obj.Visit(func(key []byte, v *fastjson.Value) {
+							k1 := string(key)
+							log.Println(k1)
+						})
+
+						log.Fatalln(item.GetObject())
+
 						buckets[i] = Bucket{
 							Key:      string(item.GetStringBytes("key")),
 							DocCount: item.GetInt("doc_count"),
+							Aggs:     make(map[string]*TermsResult),
+						}
+						//log.Fatalln(b.query.Aggs[key].(esearch.AggregatorKeySet).KeySet())
+						subAggsKeySet := b.query.Aggs[key].(esearch.AggregatorKeySet).KeySet()
+						for _, subAggKey := range subAggsKeySet {
+							if subAggKey != "" {
+								log.Println(subAggKey)
+								subAggBucketsV := item.Get(subAggKey)
+								termResult := &TermsResult{
+									DocCountErrorUpperBound: subAggBucketsV.GetInt("doc_count_error_upper_bound"),
+									SumOtherDocCount:        subAggBucketsV.GetInt("sum_other_doc_count"),
+									//Buckets:                 buckets,
+								}
+								log.Println(termResult)
+								buckets[i].Aggs[subAggKey] = termResult
+								log.Println(buckets)
+								log.Fatalln(subAggBucketsV)
+							}
+
 						}
 					}
 
@@ -346,6 +376,120 @@ func (b *Builder) Parser(result *Result, value []byte, dest any) error {
 	}
 
 	return nil
+}
+
+func (b *Builder) aggParser(aggsV *fastjson.Object) {
+	rootBuckets := make([]Bucket, 0)
+	aggsV.Visit(func(k []byte, v *fastjson.Value) {
+		key := string(k)
+		if key == "key" {
+
+		} else if key == "doc_count" {
+
+		} else {
+			lastIndex := strings.LastIndex(key, "_")
+			if lastIndex != -1 && lastIndex+1 < len(key) {
+				lastString := key[lastIndex+1:]
+				switch lastString {
+				case esearch.Terms:
+					bucketsArr := v.GetArray("buckets")
+
+					subBuckets := make([]*Bucket, len(bucketsArr))
+					for i, bucket := range bucketsArr {
+						bucketObj := bucket.GetObject()
+
+						subBucket := &Bucket{}
+						if bucketObj != nil {
+							bucketObj.Visit(func(key []byte, v *fastjson.Value) {
+								subK := string(key)
+								log.Println(subK)
+								if subK == "key" {
+									subBucket.Key = string(v.GetStringBytes())
+								} else if subK == "doc_count" {
+									subBucket.DocCount = v.GetInt()
+								} else {
+									subLastIndex := strings.LastIndex(subK, "_")
+									if subLastIndex != -1 && subLastIndex+1 < len(key) {
+										subLastString := subK[subLastIndex+1:]
+										switch subLastString {
+										case esearch.Terms:
+											subBucketsArr := v.GetArray("buckets")
+
+											subBuckets := make([]*Bucket, len(subBucketsArr))
+											for j, subBucket := range subBucketsArr {
+												subBucketObj := subBucket.GetObject()
+												k2Bucket := &Bucket{}
+
+												if subBucketObj != nil {
+													subBucketObj.Visit(func(key []byte, v *fastjson.Value) {
+														k2 := string(key)
+														log.Println(k2, v)
+														if k2 == "key" {
+															k2Bucket.Key = string(v.GetStringBytes())
+														} else if k2 == "doc_count" {
+															k2Bucket.DocCount = v.GetInt()
+														} else {
+															k2LastIndex := strings.LastIndex(k2, "_")
+															if k2LastIndex != -1 && k2LastIndex+1 < len(key) {
+
+															}
+														}
+
+													})
+													log.Println("k2Bucket:", k2Bucket)
+													//subBuckets = append(subBuckets, k2Bucket)
+												}
+												subBuckets[j] = k2Bucket
+												log.Println(j, subBucket, subBucketObj)
+											}
+											log.Println("subBuckets", subBuckets)
+										}
+									}
+								}
+
+							})
+						}
+						subBuckets[i] = subBucket
+					}
+					log.Println("subBuckets", subBuckets)
+				}
+			}
+		}
+
+	})
+
+	log.Println("rootBuckets", rootBuckets)
+}
+
+func (b *Builder) bucketsParser(bucketsV []*fastjson.Value) []Bucket {
+	buckets := make([]Bucket, len(bucketsV))
+	//for i, item := range bucketsV {
+	//	buckets[i] = Bucket{
+	//		Key:      string(item.GetStringBytes("key")),
+	//		DocCount: item.GetInt("doc_count"),
+	//		Aggs:     make(map[string]*TermsResult),
+	//	}
+	//	//log.Fatalln(b.query.Aggs[key].(esearch.AggregatorKeySet).KeySet())
+	//	subAggsKeySet := b.query.Aggs[key].(esearch.AggregatorKeySet).KeySet()
+	//	for _, subAggKey := range subAggsKeySet {
+	//		if subAggKey != "" {
+	//			log.Println(subAggKey)
+	//			subAggBucketsV := item.Get(subAggKey)
+	//			termResult := &TermsResult{
+	//				DocCountErrorUpperBound: subAggBucketsV.GetInt("doc_count_error_upper_bound"),
+	//				SumOtherDocCount:        subAggBucketsV.GetInt("sum_other_doc_count"),
+	//				//Buckets:                 buckets,
+	//			}
+	//			log.Println(termResult)
+	//			buckets[i].Aggs[subAggKey] = termResult
+	//			log.Println(buckets)
+	//			log.Fatalln(subAggBucketsV)
+	//		}
+	//
+	//	}
+	//}
+
+	return buckets
 }
 
 func setFieldValue(field reflect.StructField, value *fastjson.Value) (val any, err error) {

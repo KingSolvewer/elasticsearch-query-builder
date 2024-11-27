@@ -84,7 +84,7 @@ type Sort map[string]Order
 
 type Order struct {
 	Order OrderType `json:"order"`
-	Mode  string    `json:"mode"`
+	Mode  string    `json:"mode,omitempty"`
 }
 
 type SortMap map[string]OrderType
@@ -150,6 +150,10 @@ func (query Query) BoolBuild() string {
 
 type Aggregator interface {
 	Aggregate(subAgg map[string]Aggregator)
+}
+
+type AggregatorKeySet interface {
+	KeySet() []string
 }
 
 type Request interface {

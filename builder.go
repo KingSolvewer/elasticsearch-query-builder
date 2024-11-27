@@ -25,6 +25,7 @@ type Builder struct {
 	scrollId           string
 	collapse           *collapse.Collapser
 	raw                string
+	query              *esearch.ElasticQuery
 	QueryDsl           string
 	Request            esearch.Request
 	byteData           []byte
@@ -53,8 +54,8 @@ func (b *Builder) Marshal() (string, error) {
 		b.QueryDsl = b.raw
 		return b.raw, nil
 	} else {
-		query := b.compile()
-		bytes, err := json.Marshal(query)
+		b.query = b.compile()
+		bytes, err := json.Marshal(b.query)
 		if err == nil {
 			b.QueryDsl = string(bytes)
 		}

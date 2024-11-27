@@ -1,6 +1,8 @@
 package main
 
 import (
+	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
+	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
 	"log"
 	"main/zyzx"
 )
@@ -22,7 +24,13 @@ func main() {
 	var esResult []EsResult
 
 	es := zyzx.NewEs()
-	result, err := es.Select(zyzx.NewsUuid, zyzx.NewsTitle, zyzx.NewsContent, zyzx.PostTime).Get(&esResult)
+	es.GroupBy(zyzx.Platform, aggs.TermsParam{}, func(b *elastic.Builder) {
+		b.GroupBy(zyzx.SimHash, aggs.TermsParam{}, nil)
+		//b.TopHitsFunc(func(b *elastic.Builder) {
+		//	b.Size(1).OrderBy(zyzx.PostTime, esearch.Asc).Select(zyzx.NewsUuid, zyzx.NewsTitle, zyzx.NewsContent, zyzx.PostTime)
+		//})
+	})
+	result, err := es.Size(0).Select(zyzx.NewsUuid, zyzx.NewsTitle, zyzx.NewsContent, zyzx.PostTime).Get(&esResult)
 
 	log.Println(es, es.QueryDsl)
 	if err != nil {
