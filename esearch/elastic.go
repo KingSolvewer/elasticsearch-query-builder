@@ -224,16 +224,11 @@ type RangeBucket struct {
 }
 
 type HitsResult struct {
-	Total    int           `json:"total"`
-	MaxScore float64       `json:"max_score"`
-	Hits     []*HitsBucket `json:"hits"`
+	Total int           `json:"total"`
+	Hits  []*HitsBucket `json:"hits"`
 }
 
 type HitsBucket struct {
-	Index     string               `json:"_index"`
-	Type      string               `json:"_type"`
-	Id        string               `json:"_id"`
-	Score     float64              `json:"_score"`
 	Source    any                  `json:"_source"`
 	Fields    map[string][]string  `json:"fields,omitempty"`
 	InnerHits map[string]InnerHits `json:"inner_hits,omitempty"`
