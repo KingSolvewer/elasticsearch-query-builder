@@ -14,7 +14,7 @@ import (
 const (
 	DateTime           = "2006-01-02 15:04:05"
 	DataSize           = 10000
-	EsGateWayUrl       = "http://10.111.7.178:1115/es/search/sharding/one"
+	EsGateWayUrl       = ""
 	EsScrollGateWayUrl = ""
 )
 
