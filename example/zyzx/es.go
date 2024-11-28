@@ -12,7 +12,7 @@ import (
 const (
 	DateTime           = "2006-01-02 15:04:05"
 	DataSize           = 10000
-	EsGateWayUrl       = ""
+	EsGateWayUrl       = "http://10.111.8.61:2115/es/search/sharding/one"
 	EsScrollGateWayUrl = ""
 )
 
@@ -84,6 +84,7 @@ const NewsOcr = "news_ocr"
 const NewsSimHashHash = "news_sim_hash" //相似文章数聚合查询
 const IsRumor = "is_rumor"              //是否是谣言
 const GroupUuid = "group_uuid"          //所属话题ID
+const NewsPosition = "news_position"
 
 type Params struct {
 	Index      string `json:"index"`
@@ -112,8 +113,6 @@ func NewEs() *Es {
 		index:     "all",
 	}
 
-	builder.Request = es
-
 	return es
 }
 
@@ -121,7 +120,6 @@ func (es *Es) Clone() *Es {
 	newEs := &Es{
 		Builder: es.Builder.Clone(),
 	}
-	newEs.Builder.Request = newEs
 
 	return newEs
 }
@@ -201,7 +199,7 @@ func (es *Es) getParams(scroll bool) ([]byte, error) {
 
 	params := Params{
 		Index:      es.index,
-		Statement:  es.QueryDsl,
+		Statement:  "",
 		StartStamp: startStamp,
 		EndStamp:   endStamp,
 	}

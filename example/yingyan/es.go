@@ -14,7 +14,7 @@ import (
 const (
 	DateTime           = "2006-01-02 15:04:05"
 	DataSize           = 10000
-	EsGateWayUrl       = ""
+	EsGateWayUrl       = "http://10.111.7.178:1115/es/search/sharding/one"
 	EsScrollGateWayUrl = ""
 )
 
@@ -132,8 +132,6 @@ func NewYingyanEs() *YingyanEs {
 		index:     "all",
 	}
 
-	builder.Request = es
-
 	return es
 }
 
@@ -141,7 +139,6 @@ func (es *YingyanEs) Clone() *YingyanEs {
 	newEs := &YingyanEs{
 		Builder: es.Builder.Clone(),
 	}
-	newEs.Builder.Request = newEs
 
 	return newEs
 }
@@ -261,7 +258,7 @@ func (es *YingyanEs) getParams(scroll bool) ([]byte, error) {
 
 	params := Params{
 		Index:      es.index,
-		Statement:  es.QueryDsl,
+		Statement:  "",
 		StartStamp: startStamp,
 		EndStamp:   endStamp,
 	}

@@ -52,13 +52,6 @@ func (b *Builder) compile() *esearch.ElasticQuery {
 	if b.aggregations != nil {
 		aggSet := make(map[string]esearch.Aggregator)
 		b.componentAggs(aggSet)
-		//for key, item := range aggSet {
-		//	log.Printf("%#v, %#v \n", key, item)
-		//	for subK, subItem := range item.(*aggs.TermsAggs).Aggs {
-		//		log.Printf("%#v, %#v \n", subK, subItem)
-		//	}
-		//}
-		//log.Fatalln()
 		query.Aggs = aggSet
 	}
 

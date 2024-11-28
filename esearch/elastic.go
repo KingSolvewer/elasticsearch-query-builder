@@ -1,5 +1,7 @@
 package esearch
 
+import "encoding/json"
+
 type BoolClauseType int
 
 const (
@@ -54,22 +56,22 @@ const (
 )
 
 const (
-	Terms         = "terms"
-	Histogram     = "histogram"
-	Range         = "range"
-	DateRange     = "date_range"
-	DateHistogram = "date_histogram"
-	AggsFilter    = "filter"
+	Terms         = "_terms"
+	Histogram     = "_histogram"
+	Range         = "_range"
+	DateRange     = "_dateRange"
+	DateHistogram = "_dateHistogram"
+	AggsFilter    = "_filter"
 
-	Avg           = "avg"
-	Max           = "max"
-	Min           = "min"
-	Sum           = "sum"
-	ValueCount    = "value_count"
-	Stats         = "stats"
-	ExtendedStats = "extended_stats"
-	TopHits       = "top_hits"
-	Cardinality   = "cardinality"
+	Avg           = "_avg"
+	Max           = "_max"
+	Min           = "_min"
+	Sum           = "_sum"
+	ValueCount    = "_valueCount"
+	Stats         = "_stats"
+	ExtendedStats = "_extendedStats"
+	TopHits       = "_topHits"
+	Cardinality   = "_cardinality"
 )
 
 type QueryBuilder interface {
@@ -152,10 +154,6 @@ type Aggregator interface {
 	Aggregate(subAgg map[string]Aggregator)
 }
 
-type AggregatorKeySet interface {
-	KeySet() []string
-}
-
 type Request interface {
 	Query() ([]byte, error)
 	ScrollQuery() ([]byte, error)
@@ -167,4 +165,95 @@ type Collapsor interface {
 
 type ExpandInnerHits interface {
 	ExpandHits()
+}
+
+type CountResult struct {
+	Value int `json:"value"`
+}
+
+type ArithmeticResult struct {
+	Value float64 `json:"value"`
+}
+
+type StatsResult struct {
+	Count int     `json:"count"`
+	Min   float64 `json:"min"`
+	Max   float64 `json:"max"`
+	Avg   float64 `json:"avg"`
+	Sum   float64 `json:"sum"`
+}
+
+type ExtendStatsResult struct {
+	*StatsResult
+	SumOfSquares       float64 `json:"sum_of_squares"`
+	Variance           float64 `json:"variance"`
+	StdDeviation       float64 `json:"std_deviation"`
+	StdDeviationBounds `json:"std_deviation_bounds"`
+}
+
+type StdDeviationBounds struct {
+	Upper float64 `json:"upper"`
+	Lower float64 `json:"lower"`
+}
+
+type TermsResult struct {
+	DocCountErrorUpperBound int      `json:"doc_count_error_upper_bound"`
+	SumOtherDocCount        int      `json:"sum_other_doc_count"`
+	Buckets                 []Bucket `json:"buckets"`
+}
+
+type Bucket struct {
+	Key         string `json:"key"`
+	DocCount    int    `json:"doc_count"`
+	KeyAsString string `json:"key_as_string,omitempty"` // histogram, date_histogram 使用
+	RangeBucket
+	Aggs AggsResult `json:"aggs,omitempty"`
+}
+
+type HistogramResult struct {
+	Buckets []Bucket `json:"buckets"`
+}
+
+type RangeResult struct {
+	Buckets []Bucket
+}
+
+type RangeBucket struct {
+	To           any    `json:"to,omitempty"`             // range, date_range 使用
+	ToAsString   string `json:"to_as_string,omitempty"`   // range, date_range 使用
+	From         any    `json:"from,omitempty"`           // range, date_range 使用
+	FromAsString string `json:"from_as_string,omitempty"` // range, date_range 使用
+}
+
+type HitsResult struct {
+	Total    int          `json:"total"`
+	MaxScore float64      `json:"max_score"`
+	Hits     []HitsBucket `json:"hits"`
+}
+
+type HitsBucket struct {
+	Index string  `json:"_index"`
+	Type  string  `json:"_type"`
+	Id    string  `json:"_id"`
+	Score float64 `json:"_score"`
+	//Source    map[string]any       `json:"_source"`
+	Source    json.RawMessage      `json:"_source"`
+	Fields    map[string][]string  `json:"fields,omitempty"`
+	InnerHits map[string]InnerHits `json:"inner_hits,omitempty"`
+	Sort      []any                `json:"sort,omitempty"`
+}
+
+type InnerHits struct {
+	HitsResult
+}
+
+type AggsResult struct {
+	Terms         map[string]*TermsResult
+	Histogram     map[string]*HistogramResult
+	Range         map[string]*RangeResult
+	Count         map[string]*CountResult
+	Arithmetic    map[string]*ArithmeticResult
+	Stats         map[string]*StatsResult
+	ExtendedStats map[string]*ExtendStatsResult
+	TopHits       *HitsResult
 }

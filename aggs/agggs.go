@@ -7,9 +7,8 @@ import (
 type TopHitsFunc func() TopHitsParam
 
 type TermsAggs struct {
-	Terms      `json:"terms"`
-	Aggs       map[string]esearch.Aggregator `json:"aggs,omitempty"`
-	AggsKeySet []string                      `json:"-"`
+	Terms `json:"terms"`
+	Aggs  map[string]esearch.Aggregator `json:"aggs,omitempty"`
 }
 
 type Terms struct {
@@ -23,17 +22,7 @@ type TermsParam struct {
 }
 
 func (agg *TermsAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
-	keySet := make([]string, len(subAgg))
-	for key := range subAgg {
-		keySet = append(keySet, key)
-	}
-	agg.AggsKeySet = keySet
-
 	agg.Aggs = subAgg
-}
-
-func (agg *TermsAggs) KeySet() []string {
-	return agg.AggsKeySet
 }
 
 type HistogramAggs struct {

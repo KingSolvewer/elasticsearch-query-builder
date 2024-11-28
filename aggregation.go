@@ -20,7 +20,7 @@ func (b *Builder) GroupBy(field string, param aggs.TermsParam, subAggFuncSet ...
 		},
 	}
 
-	return b.Aggs(field+"_"+esearch.Terms, termsAgg, subAggFuncSet...)
+	return b.Aggs(field+esearch.Terms, termsAgg, subAggFuncSet...)
 }
 
 func (b *Builder) Histogram(field string, param aggs.HistogramParam, subAggFuncSet ...SubAggFunc) *Builder {
@@ -31,7 +31,7 @@ func (b *Builder) Histogram(field string, param aggs.HistogramParam, subAggFuncS
 		},
 	}
 
-	return b.Aggs(field+"_"+esearch.Histogram, histogram, subAggFuncSet...)
+	return b.Aggs(field+esearch.Histogram, histogram, subAggFuncSet...)
 }
 
 func (b *Builder) DateGroupBy(field string, param aggs.HistogramParam, subAggFuncSet ...SubAggFunc) *Builder {
@@ -42,21 +42,22 @@ func (b *Builder) DateGroupBy(field string, param aggs.HistogramParam, subAggFun
 		},
 	}
 
-	return b.Aggs(field+"_"+esearch.DateHistogram, histogram, subAggFuncSet...)
+	return b.Aggs(field+esearch.DateHistogram, histogram, subAggFuncSet...)
 }
 
 func (b *Builder) Range(field string, param aggs.RangeParam, subAggFuncSet ...SubAggFunc) *Builder {
 	if !checkAggsRangeType(param.Ranges) {
-		return b
+		panic("Range Aggregation setting is fault!")
 	}
 
 	rangeAggs := &aggs.RangeAggs{
 		Range: aggs.Range{
-			Field: field,
+			Field:      field,
+			RangeParam: param,
 		},
 	}
 
-	return b.Aggs(field+"_"+esearch.Range, rangeAggs, subAggFuncSet...)
+	return b.Aggs(field+esearch.Range, rangeAggs, subAggFuncSet...)
 }
 
 func (b *Builder) DateRange(field string, param aggs.RangeParam, subAggFuncSet ...SubAggFunc) *Builder {
@@ -70,7 +71,7 @@ func (b *Builder) DateRange(field string, param aggs.RangeParam, subAggFuncSet .
 		},
 	}
 
-	return b.Aggs(field+"_"+esearch.DateRange, rangeAggs, subAggFuncSet...)
+	return b.Aggs(field+esearch.DateRange, rangeAggs, subAggFuncSet...)
 }
 
 func (b *Builder) AggsFilter(field string, fn NestWhereFunc, subAggFuncs ...SubAggFunc) *Builder {
@@ -86,7 +87,7 @@ func (b *Builder) AggsFilter(field string, fn NestWhereFunc, subAggFuncs ...SubA
 			Filter: query,
 		}
 
-		return b.Aggs(field+"_"+esearch.AggsFilter, filterAggs, subAggFuncs...)
+		return b.Aggs(field+esearch.AggsFilter, filterAggs, subAggFuncs...)
 	}
 
 	return b
@@ -109,7 +110,7 @@ func (b *Builder) Avg(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+esearch.Avg, avgAggs)
+	return b.Aggs(field+esearch.Avg, avgAggs)
 }
 
 func (b *Builder) Max(field string, param aggs.MetricParam) *Builder {
@@ -120,7 +121,7 @@ func (b *Builder) Max(field string, param aggs.MetricParam) *Builder {
 		},
 	}
 
-	return b.Aggs(field+"_"+esearch.Max, maxAggs)
+	return b.Aggs(field+esearch.Max, maxAggs)
 }
 
 func (b *Builder) Min(field string, param aggs.MetricParam) *Builder {
@@ -130,7 +131,7 @@ func (b *Builder) Min(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+esearch.Min, minAggs)
+	return b.Aggs(field+esearch.Min, minAggs)
 }
 
 func (b *Builder) Sum(field string, param aggs.MetricParam) *Builder {
@@ -140,7 +141,7 @@ func (b *Builder) Sum(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+esearch.Sum, sumAggs)
+	return b.Aggs(field+esearch.Sum, sumAggs)
 }
 
 func (b *Builder) Stats(field string, param aggs.MetricParam) *Builder {
@@ -150,7 +151,7 @@ func (b *Builder) Stats(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+esearch.Stats, statsAggs)
+	return b.Aggs(field+esearch.Stats, statsAggs)
 }
 
 func (b *Builder) ExtendedStats(field string, param aggs.MetricParam) *Builder {
@@ -160,7 +161,7 @@ func (b *Builder) ExtendedStats(field string, param aggs.MetricParam) *Builder {
 			MetricParam: param,
 		},
 	}
-	return b.Aggs(field+"_"+esearch.ExtendedStats, statsAggs)
+	return b.Aggs(field+esearch.ExtendedStats, statsAggs)
 }
 
 func (b *Builder) ValueCount(field string) *Builder {
@@ -169,7 +170,7 @@ func (b *Builder) ValueCount(field string) *Builder {
 			Field: field,
 		},
 	}
-	return b.Aggs(field+"_"+esearch.ValueCount, statsAggs)
+	return b.Aggs(field+esearch.ValueCount, statsAggs)
 }
 
 func (b *Builder) Cardinality(field string, fn aggs.CardinalityFunc) *Builder {
@@ -182,7 +183,7 @@ func (b *Builder) Cardinality(field string, fn aggs.CardinalityFunc) *Builder {
 		cardinality.Cardinality.CardinalityParam = fn()
 	}
 
-	return b.Aggs(field+"_"+esearch.Cardinality, cardinality)
+	return b.Aggs(field+esearch.Cardinality, cardinality)
 }
 
 func (b *Builder) TopHits(hits aggs.TopHitsParam) *Builder {
@@ -226,18 +227,17 @@ func (b *Builder) topHitsAgg() *aggs.TopHitsAggs {
 }
 
 func checkAggsRangeType(ranges []aggs.Ranges) bool {
+	var check bool
 	for _, r := range ranges {
 		switch r.From.(type) {
 		case int, string:
-		default:
-			return false
+			check = true
 		}
 		switch r.To.(type) {
 		case int, string:
-		default:
-			return false
+			check = true
 		}
 	}
 
-	return true
+	return check
 }
