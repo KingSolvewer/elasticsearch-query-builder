@@ -224,9 +224,9 @@ type RangeBucket struct {
 }
 
 type HitsResult struct {
-	Total    int          `json:"total"`
-	MaxScore float64      `json:"max_score"`
-	Hits     []HitsBucket `json:"hits"`
+	Total    int           `json:"total"`
+	MaxScore float64       `json:"max_score"`
+	Hits     []*HitsBucket `json:"hits"`
 }
 
 type HitsBucket struct {
