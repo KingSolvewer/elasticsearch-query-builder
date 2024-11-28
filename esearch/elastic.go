@@ -1,7 +1,5 @@
 package esearch
 
-import "encoding/json"
-
 type BoolClauseType int
 
 const (
@@ -232,12 +230,11 @@ type HitsResult struct {
 }
 
 type HitsBucket struct {
-	Index string  `json:"_index"`
-	Type  string  `json:"_type"`
-	Id    string  `json:"_id"`
-	Score float64 `json:"_score"`
-	//Source    map[string]any       `json:"_source"`
-	Source    json.RawMessage      `json:"_source"`
+	Index     string               `json:"_index"`
+	Type      string               `json:"_type"`
+	Id        string               `json:"_id"`
+	Score     float64              `json:"_score"`
+	Source    any                  `json:"_source"`
 	Fields    map[string][]string  `json:"fields,omitempty"`
 	InnerHits map[string]InnerHits `json:"inner_hits,omitempty"`
 	Sort      []any                `json:"sort,omitempty"`
