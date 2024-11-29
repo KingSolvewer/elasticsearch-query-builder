@@ -159,6 +159,10 @@ func (b *Builder) CollapseParams(field string, fn collapse.ParamsFunc) *Builder 
 	return b
 }
 
+func (b *Builder) GetCollapse() *collapse.Collapser {
+	return b.collapse
+}
+
 func Select(fields ...string) *Builder {
 	return builder.Select(fields...)
 }
