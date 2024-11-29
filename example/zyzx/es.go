@@ -3,7 +3,11 @@ package zyzx
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
+	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
+	"github.com/KingSolvewer/elasticsearch-query-builder/parser"
+	"github.com/valyala/fastjson"
 	"io"
 	"net/http"
 	"time"
@@ -100,9 +104,20 @@ type Es struct {
 	startTime string
 	endTime   string
 	index     string
+	jsonValue *fastjson.Value
 }
 
-//var _ esearch.Request = (*YingyanEs)(nil)
+type Result struct {
+	Total         int                 `json:"total"`
+	List          any                 `json:"list"`
+	Aggs          *esearch.AggsResult `json:"aggs,omitempty"`
+	ScrollId      string              `json:"scroll_id,omitempty"`
+	OriginalTotal esearch.Paginator   `json:"original_total,omitempty"`
+	PerPage       esearch.Paginator   `json:"per_page,omitempty"`
+	CurrentPage   esearch.Paginator   `json:"current_page,omitempty"`
+	LastPage      esearch.Paginator   `json:"last_page,omitempty"`
+	TopHits       any                 `json:"-"`
+}
 
 func NewEs() *Es {
 	builder := elastic.NewBuilder()
@@ -197,9 +212,14 @@ func (es *Es) getParams(scroll bool) ([]byte, error) {
 		return nil, err
 	}
 
+	dsl, err := es.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
 	params := Params{
 		Index:      es.index,
-		Statement:  "",
+		Statement:  dsl,
 		StartStamp: startStamp,
 		EndStamp:   endStamp,
 	}
@@ -234,4 +254,132 @@ func (es *Es) request(jsonData []byte, url string) ([]byte, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	return body, err
+}
+
+func (es *Es) Get(result *Result) error {
+	data, err := es.runQuery()
+	if err != nil {
+		return err
+	}
+
+	// 解析成对应的json数据
+	dataCopy := make([]byte, len(data))
+	copy(dataCopy, data)
+
+	es.jsonValue, err = fastjson.ParseBytes(dataCopy)
+	if err != nil {
+		return err
+	}
+
+	err = es.Parser(result)
+
+	// 查询完毕之后，重置查询语句
+	es.Reset()
+
+	return err
+}
+
+func (es *Es) Paginator(result *Result, page, size uint) error {
+
+	var from uint = 0
+	if page > 0 {
+		from = page - 1
+	}
+	es.From(from)
+
+	if size == 0 {
+		es.Size(10)
+	} else {
+		es.Size(size)
+	}
+
+	if es.GetCollapse() != nil {
+		es.Cardinality(es.GetCollapse().Field, nil)
+	}
+
+	data, err := es.runQuery()
+	if err != nil {
+		return err
+	}
+
+	// 解析成对应的json数据
+	dataCopy := make([]byte, len(data))
+	copy(dataCopy, data)
+
+	es.jsonValue, err = fastjson.ParseBytes(dataCopy)
+	if err != nil {
+		return err
+	}
+
+	err = es.Parser(result)
+
+	// 查询完毕之后，重置查询语句
+	es.Reset()
+
+	return err
+}
+
+func (es *Es) runQuery() (data []byte, err error) {
+	if es.GetScroll() == "" {
+		data, err = es.Query()
+	} else {
+		data, err = es.ScrollQuery()
+	}
+
+	return data, err
+}
+
+func (es *Es) GetRawData() ([]byte, error) {
+	data, err := es.runQuery()
+	return data, err
+}
+
+func (es *Es) GetResult() (string, error) {
+	data, err := es.runQuery()
+	return string(data), err
+}
+
+func (es *Es) Parser(result *Result) error {
+	err := elastic.CheckHitsDestType(result.List)
+	if err != nil {
+		return err
+	}
+
+	err = elastic.CheckTopHitsDestType(result.TopHits)
+	if err != nil {
+		return err
+	}
+
+	code := es.jsonValue.GetInt("code")
+	if code != 0 {
+		msgV := es.jsonValue.GetStringBytes("msg")
+		return errors.New(string(msgV))
+	}
+
+	result.Total = es.jsonValue.GetInt("total")
+
+	// 列表
+	if result.List != nil {
+		hitsV := es.jsonValue.Get("hits").GetArray("hits")
+
+		err = parser.HitsValueParser(hitsV, result.List)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 聚合数据
+	aggsObj := es.jsonValue.GetObject("aggregations")
+	aggsResult, errSet := parser.AggValueParser(aggsObj, result.TopHits)
+	if len(errSet) > 0 && errSet[0] != nil {
+		return errSet[0]
+	}
+
+	result.Aggs = aggsResult
+
+	if es.GetScroll() != "" {
+		result.ScrollId = string(es.jsonValue.GetStringBytes("scroll_Id"))
+	}
+
+	return nil
 }

@@ -225,19 +225,3 @@ func (b *Builder) topHitsAgg() *aggs.TopHitsAggs {
 
 	return topHitsAgg
 }
-
-func checkAggsRangeType(ranges []aggs.Ranges) bool {
-	var check bool
-	for _, r := range ranges {
-		switch r.From.(type) {
-		case int, string:
-			check = true
-		}
-		switch r.To.(type) {
-		case int, string:
-			check = true
-		}
-	}
-
-	return check
-}

@@ -972,15 +972,6 @@ func (b *Builder) append(clauseTyp esearch.BoolClauseType, clause esearch.BoolBu
 	b.where[clauseTyp] = append(b.where[clauseTyp], clause)
 }
 
-func checkType(value any) bool {
-	switch value.(type) {
-	case int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64, string, bool:
-		return true
-	default:
-		return false
-	}
-}
-
 func (b *Builder) PostFilter(fn NestWhereFunc) *Builder {
 	b.postWhere = fn
 

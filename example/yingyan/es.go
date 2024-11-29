@@ -3,9 +3,11 @@ package yingyan
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
-	"github.com/KingSolvewer/elasticsearch-query-builder/fulltext"
+	"github.com/KingSolvewer/elasticsearch-query-builder/parser"
+	"github.com/valyala/fastjson"
 	"io"
 	"net/http"
 	"time"
@@ -114,20 +116,31 @@ type Params struct {
 	ScrollId   string `json:"scrollId,omitempty"`
 }
 
-type YingyanEs struct {
+type Es struct {
 	*elastic.Builder
 	startTime string
 	endTime   string
 	index     string
+	jsonValue *fastjson.Value
 }
 
-//var _ esearch.Request = (*YingyanEs)(nil)
+type Result struct {
+	Total         int                 `json:"total"`
+	List          any                 `json:"list"`
+	Aggs          *esearch.AggsResult `json:"aggs,omitempty"`
+	ScrollId      string              `json:"scroll_id,omitempty"`
+	OriginalTotal esearch.Paginator   `json:"original_total,omitempty"`
+	PerPage       esearch.Paginator   `json:"per_page,omitempty"`
+	CurrentPage   esearch.Paginator   `json:"current_page,omitempty"`
+	LastPage      esearch.Paginator   `json:"last_page,omitempty"`
+	TopHits       any                 `json:"-"`
+}
 
-func NewYingyanEs() *YingyanEs {
+func NewEs() *Es {
 	builder := elastic.NewBuilder()
-	es := &YingyanEs{
+	es := &Es{
 		Builder:   builder,
-		startTime: time.Now().Add(-3 * 30 * 60 * 60 * 24 * time.Second).Format(DateTime),
+		startTime: time.Now().AddDate(0, -3, 0).Format(DateTime),
 		endTime:   time.Now().Format(DateTime),
 		index:     "all",
 	}
@@ -135,73 +148,33 @@ func NewYingyanEs() *YingyanEs {
 	return es
 }
 
-func (es *YingyanEs) Clone() *YingyanEs {
-	newEs := &YingyanEs{
+func (es *Es) Clone() *Es {
+	newEs := &Es{
 		Builder: es.Builder.Clone(),
 	}
 
 	return newEs
 }
 
-func (es *YingyanEs) SetIndex(index string) *YingyanEs {
+func (es *Es) SetIndex(index string) *Es {
 	es.index = index
 	return es
 }
 
-func (es *YingyanEs) SearchTime(startTime, endTime string) *YingyanEs {
+func (es *Es) SearchTime(startTime, endTime string) *Es {
 	es.startTime = startTime
 	es.endTime = endTime
 
 	return es
 }
 
-func (es *YingyanEs) Keyword(keywordGroup []string, selectValidation []string) *YingyanEs {
-	if keywordGroup == nil {
-		return es
-	}
-
-	validationSet := make([]string, 0)
-	for _, v := range selectValidation {
-		if val, ok := SelectValidationSet[v]; ok {
-			validationSet = append(validationSet, val)
-		}
-	}
-
-	if len(validationSet) == 1 {
-		es.WhereNested(func(b *elastic.Builder) {
-			for _, keyword := range keywordGroup {
-				b.WhereMatch(validationSet[0], keyword, esearch.MatchPhrase, nil)
-			}
-		})
-	} else if len(validationSet) > 1 {
-		es.WhereNested(func(b *elastic.Builder) {
-			for _, keyword := range keywordGroup {
-				b.WhereMultiMatch(validationSet, keyword, esearch.Phrase, func() fulltext.AppendParams {
-					return fulltext.AppendParams{
-						Operator:           "and",
-						MinimumShouldMatch: "100%",
-					}
-				})
-			}
-		})
-	} else {
-		es.WhereNested(func(b *elastic.Builder) {
-			for _, url := range keywordGroup {
-				b.WhereWildcard(NewsUrl, url, nil)
-			}
-		})
-	}
-
-	return es
-}
-
-func (es *YingyanEs) Copy() *YingyanEs {
-	return &YingyanEs{
+func (es *Es) Copy() *Es {
+	return &Es{
 		Builder: es.Builder.Clone(),
 	}
 }
 
-func (es *YingyanEs) parseTime(typ string) (int64, error) {
+func (es *Es) parseTime(typ string) (int64, error) {
 	dateTime := es.startTime
 	if typ == "end" {
 		dateTime = es.endTime
@@ -227,7 +200,7 @@ func (es *YingyanEs) parseTime(typ string) (int64, error) {
 	return t.UnixMilli(), nil
 }
 
-func (es *YingyanEs) Query() ([]byte, error) {
+func (es *Es) Query() ([]byte, error) {
 	jsonData, err := es.getParams(true)
 	if err != nil {
 		return nil, err
@@ -236,7 +209,7 @@ func (es *YingyanEs) Query() ([]byte, error) {
 	return es.request(jsonData, EsGateWayUrl)
 }
 
-func (es *YingyanEs) ScrollQuery() ([]byte, error) {
+func (es *Es) ScrollQuery() ([]byte, error) {
 	jsonData, err := es.getParams(true)
 	if err != nil {
 		return nil, err
@@ -245,7 +218,7 @@ func (es *YingyanEs) ScrollQuery() ([]byte, error) {
 	return es.request(jsonData, EsScrollGateWayUrl)
 }
 
-func (es *YingyanEs) getParams(scroll bool) ([]byte, error) {
+func (es *Es) getParams(scroll bool) ([]byte, error) {
 
 	startStamp, err := es.parseTime("start")
 	if err != nil {
@@ -258,7 +231,7 @@ func (es *YingyanEs) getParams(scroll bool) ([]byte, error) {
 
 	params := Params{
 		Index:      es.index,
-		Statement:  "",
+		Statement:  es.Dsl(),
 		StartStamp: startStamp,
 		EndStamp:   endStamp,
 	}
@@ -272,7 +245,7 @@ func (es *YingyanEs) getParams(scroll bool) ([]byte, error) {
 	return jsonData, err
 }
 
-func (es *YingyanEs) request(jsonData []byte, url string) ([]byte, error) {
+func (es *Es) request(jsonData []byte, url string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
@@ -293,4 +266,136 @@ func (es *YingyanEs) request(jsonData []byte, url string) ([]byte, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	return body, err
+}
+
+func (es *Es) Get(result *Result) error {
+	data, err := es.runQuery()
+	if err != nil {
+		return err
+	}
+
+	// 解析成对应的json数据
+	dataCopy := make([]byte, len(data))
+	copy(dataCopy, data)
+
+	es.jsonValue, err = fastjson.ParseBytes(dataCopy)
+	if err != nil {
+		return err
+	}
+
+	err = es.Parser(result)
+
+	// 查询完毕之后，重置查询语句
+	es.Reset()
+
+	return err
+}
+
+func (es *Es) Paginator(result *Result, page, size uint) error {
+
+	var from uint = 0
+	if page > 0 {
+		from = page - 1
+	}
+	es.From(from)
+
+	if size == 0 {
+		es.Size(10)
+	} else {
+		es.Size(size)
+	}
+
+	if es.GetCollapse() != nil {
+		es.Cardinality(es.GetCollapse().Field, nil)
+	}
+
+	data, err := es.runQuery()
+	if err != nil {
+		return err
+	}
+
+	// 解析成对应的json数据
+	dataCopy := make([]byte, len(data))
+	copy(dataCopy, data)
+
+	es.jsonValue, err = fastjson.ParseBytes(dataCopy)
+	if err != nil {
+		return err
+	}
+
+	err = es.Parser(result)
+
+	// 查询完毕之后，重置查询语句
+	es.Reset()
+
+	return err
+}
+
+func (es *Es) runQuery() (data []byte, err error) {
+
+	_, err = es.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	if es.GetScroll() == "" {
+		data, err = es.Query()
+	} else {
+		data, err = es.ScrollQuery()
+	}
+
+	return data, err
+}
+
+func (es *Es) GetRawData() []byte {
+	return es.jsonValue.GetStringBytes()
+}
+
+func (es *Es) GetResult() string {
+	return string(es.jsonValue.GetStringBytes())
+}
+
+func (es *Es) Parser(result *Result) error {
+	err := elastic.CheckHitsDestType(result.List)
+	if err != nil {
+		return err
+	}
+
+	err = elastic.CheckTopHitsDestType(result.TopHits)
+	if err != nil {
+		return err
+	}
+
+	code := es.jsonValue.GetInt("code")
+	if code != 0 {
+		msgV := es.jsonValue.GetStringBytes("msg")
+		return errors.New(string(msgV))
+	}
+
+	result.Total = es.jsonValue.GetInt("total")
+
+	// 列表
+	if result.List != nil {
+		hitsV := es.jsonValue.Get("hits").GetArray("hits")
+
+		err = parser.HitsValueParser(hitsV, result.List)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 聚合数据
+	aggsObj := es.jsonValue.GetObject("aggregations")
+	aggsResult, errSet := parser.AggValueParser(aggsObj, result.TopHits)
+	if len(errSet) > 0 && errSet[0] != nil {
+		return errSet[0]
+	}
+
+	result.Aggs = aggsResult
+
+	if es.GetScroll() != "" {
+		result.ScrollId = string(es.jsonValue.GetStringBytes("scroll_Id"))
+	}
+
+	return nil
 }
