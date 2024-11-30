@@ -164,8 +164,6 @@ type CardinalityParam struct {
 	PrecisionThreshold int `json:"precision_threshold,omitempty"`
 }
 
-type CardinalityFunc func() CardinalityParam
-
 func (metric *CardinalityAggs) Aggregate(subAgg map[string]esearch.Aggregator) {
 }
 

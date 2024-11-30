@@ -168,7 +168,9 @@ func Select(fields ...string) *Builder {
 }
 
 func (b *Builder) Select(fields ...string) *Builder {
-	b.fields = fields
+	if fields != nil {
+		b.fields = fields
+	}
 	return b
 }
 
@@ -177,11 +179,14 @@ func AppendField(fields ...string) *Builder {
 }
 
 func (b *Builder) AppendField(fields ...string) *Builder {
-	if len(fields) > 0 {
-		b.fields = append(b.fields, fields...)
-	} else {
-		b.fields = fields
+	if fields != nil {
+		if b.fields != nil {
+			b.fields = append(b.fields, fields...)
+		} else {
+			b.fields = fields
+		}
 	}
+
 	return b
 }
 
@@ -245,6 +250,17 @@ func (b *Builder) OrderMap(sort esearch.SortMap) *Builder {
 	return b
 }
 
+// Raw es 原始查询语句
+func Raw(raw string) *Builder {
+	return builder.Raw(raw)
+}
+
+// Raw es 原始查询语句
+func (b *Builder) Raw(raw string) *Builder {
+	b.raw = raw
+	return b
+}
+
 // Where Must term 查询语句
 func Where(field string, value any) *Builder {
 	return builder.Where(field, value)
@@ -257,24 +273,13 @@ func (b *Builder) Where(field string, value any) *Builder {
 	return b
 }
 
-// WhereRaw es 原始查询语句
-func WhereRaw(raw string) *Builder {
-	return builder.WhereRaw(raw)
-}
-
-// WhereRaw es 原始查询语句
-func (b *Builder) WhereRaw(raw string) *Builder {
-	b.raw = raw
-	return b
-}
-
 // WherePrefix Must term 查询语句
-func WherePrefix(field string, value any) *Builder {
+func WherePrefix(field string, value string) *Builder {
 	return builder.WherePrefix(field, value)
 }
 
 // WherePrefix Must term 查询语句
-func (b *Builder) WherePrefix(field string, value any) *Builder {
+func (b *Builder) WherePrefix(field string, value string) *Builder {
 	b.prefixQuery(esearch.Must, field, value)
 
 	return b
@@ -347,7 +352,6 @@ func WhereRange(field string, value int, rangeType esearch.RangeType) *Builder {
 
 // WhereRange Must Range 单向范围查询, gt:>a, lt:<a等等
 func (b *Builder) WhereRange(field string, value any, rangeType esearch.RangeType) *Builder {
-
 	b.whereRange(esearch.Must, field, value, rangeType)
 
 	return b
@@ -532,12 +536,12 @@ func (b *Builder) OrWhere(field string, value any) *Builder {
 }
 
 // OrWherePrefix Should term 查询语句
-func OrWherePrefix(field string, value any) *Builder {
+func OrWherePrefix(field string, value string) *Builder {
 	return builder.OrWherePrefix(field, value)
 }
 
 // OrWherePrefix Should term 查询语句
-func (b *Builder) OrWherePrefix(field string, value any) *Builder {
+func (b *Builder) OrWherePrefix(field string, value string) *Builder {
 	b.prefixQuery(esearch.Should, field, value)
 
 	return b
@@ -674,12 +678,12 @@ func (b *Builder) Filter(field string, value any) *Builder {
 }
 
 // FilterPrefix Filter term 查询语句
-func FilterPrefix(field string, value any) *Builder {
+func FilterPrefix(field string, value string) *Builder {
 	return builder.FilterPrefix(field, value)
 }
 
 // FilterPrefix Filter term 查询语句
-func (b *Builder) FilterPrefix(field string, value any) *Builder {
+func (b *Builder) FilterPrefix(field string, value string) *Builder {
 	b.prefixQuery(esearch.FilterClause, field, value)
 
 	return b
@@ -809,12 +813,7 @@ func (b *Builder) termQuery(clauseTyp esearch.BoolClauseType, field string, valu
 	b.append(clauseTyp, term)
 }
 
-func (b *Builder) prefixQuery(clauseTyp esearch.BoolClauseType, field string, value any) {
-	ok := checkType(value)
-	if !ok {
-		return
-	}
-
+func (b *Builder) prefixQuery(clauseTyp esearch.BoolClauseType, field string, value string) {
 	term := termlevel.TermQuery{
 		Prefix: make(map[string]any),
 	}
@@ -825,13 +824,15 @@ func (b *Builder) prefixQuery(clauseTyp esearch.BoolClauseType, field string, va
 }
 
 func (b *Builder) termsQuery(clauseTyp esearch.BoolClauseType, field string, value []any) {
-	terms := termlevel.TermQuery{
-		Terms: make(map[string][]any),
+	if len(value) > 0 && checkType(value[0]) {
+		terms := termlevel.TermQuery{
+			Terms: make(map[string][]any),
+		}
+
+		terms.Terms[field] = value
+
+		b.append(clauseTyp, terms)
 	}
-
-	terms.Terms[field] = value
-
-	b.append(clauseTyp, terms)
 }
 
 func (b *Builder) exists(clauseTyp esearch.BoolClauseType, field string) {

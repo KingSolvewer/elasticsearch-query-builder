@@ -173,14 +173,12 @@ func (b *Builder) ValueCount(field string) *Builder {
 	return b.Aggs(field+esearch.ValueCount, statsAggs)
 }
 
-func (b *Builder) Cardinality(field string, fn aggs.CardinalityFunc) *Builder {
+func (b *Builder) Cardinality(field string, param aggs.CardinalityParam) *Builder {
 	cardinality := &aggs.CardinalityAggs{
 		Cardinality: aggs.Cardinality{
-			Field: field,
+			Field:            field,
+			CardinalityParam: param,
 		},
-	}
-	if fn != nil {
-		cardinality.Cardinality.CardinalityParam = fn()
 	}
 
 	return b.Aggs(field+esearch.Cardinality, cardinality)

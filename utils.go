@@ -69,3 +69,22 @@ func checkAggsRangeType(ranges []aggs.Ranges) bool {
 
 	return check
 }
+
+type UnionInterface interface {
+	int | uint | int8 | uint8 | int16 | uint16 | int32 | uint32 | int64 | uint64 | float32 | float64 | string | bool
+}
+
+type Slice[T int | uint | int8 | uint8 | int16 | uint16 | int32 | uint32 | int64 | uint64 | float32 | float64 | string | bool] []T
+type SliceInterface interface {
+	int | uint | int8 | uint8 | int16 | uint16 | int32 | uint32 | int64 | uint64 | float32 | float64 | string | bool
+}
+
+// SliceToAny 将满足约束的任意类型，转换成any类型
+func SliceToAny[T SliceInterface](sets []T) []any {
+	v := make([]any, len(sets))
+	for i, item := range sets {
+		v[i] = item
+	}
+
+	return v
+}
