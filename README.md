@@ -256,6 +256,63 @@ DSL:
 
 ## WhereNot,OrWhere,Filter 都有以上对应的方法，使用方式相同
 
+## 其他方法
+##### Scroll(scroll string) 使用游标查询
+```go
+    elastic.Scroll("2m")
+```
+
+##### GetScroll() string
+```go
+    elastic.GetScroll()
+```
+
+##### ScrollId(scrollId string) 设置游标值
+```go
+    elastic.ScrollId("**************")
+```
+
+##### GetScrollId() string
+```go
+    elastic.GetScrollId()
+```
+
+##### Collapse(field string)  去重
+```go
+    elastic.Collapse("simhash")
+```
+
+##### GetCollapse()
+```go
+    elastic.GetScrollId()
+```
+
+##### Dsl() string 获取DSL语句
+```go
+    elastic.Dsl()
+```
+
+##### Marshal() (string, error) 获取DSL语句和构建语句时的错误
+```go
+    elastic.Marshal()
+```
+
+##### GetQuery() *esearch.ElasticQuery 获取构建DSL语句的结构体实例
+```go
+    elastic.GetQuery()
+```
+
+##### Clone() *Builder 复制Builder实例的字段和方法，生成一个新的Builder实例
+```go
+    elastic.Clone()
+```
+
+##### Reset() *Builder 重置同一个Builder实例，重复使用
+```go
+    elastic.Reset()
+```
+
+
 
 
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	elastic "github.com/KingSolvewer/elasticsearch-query-builder"
+	"github.com/KingSolvewer/elasticsearch-query-builder/aggs"
 	"github.com/KingSolvewer/elasticsearch-query-builder/esearch"
 	"github.com/KingSolvewer/elasticsearch-query-builder/parser"
 	"github.com/valyala/fastjson"
@@ -306,7 +307,7 @@ func (es *Es) Paginator(result *Result, page, size uint) error {
 	}
 
 	if es.GetCollapse() != nil {
-		es.Cardinality(es.GetCollapse().Field, nil)
+		es.Cardinality(es.GetCollapse().Field, aggs.CardinalityParam{})
 	}
 
 	data, err := es.runQuery()
